@@ -19,14 +19,16 @@ public class Duenio {
     @Column(nullable = false)
     private String apellido;
     @Column(nullable = false, unique = true)
-    private String cedula;
-    @Column(nullable = false)
+    private String dni;
     private Integer telefono;
     @Column(nullable = false)
     private String email;
-    //@OneToMany(mappedBy = "duenio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    //private List<Mascota> mascotas;
 
-
+    // Lado inverso: no crea ninguna columna. mappedBy apunta al atributo
+    // "duenio" de Mascota, que es el que tiene la FK.
+    @OneToMany(mappedBy = "duenio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Mascota> mascotas;
 
 }
