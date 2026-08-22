@@ -1,0 +1,203 @@
+{
+	"info": {
+		"_postman_id": "fb20609f-a34e-4128-8b49-5898305e5df4",
+		"name": "New Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13972803",
+		"_collection_link": "https://spacecraft-saganist-7694369-s-team.postman.co/workspace/UP~f7180954-2972-4d3c-a485-e18df6d3fa7f/collection/13972803-fb20609f-a34e-4128-8b49-5898305e5df4?action=share&source=collection_link&creator=13972803"
+	},
+	"item": [
+		{
+			"name": "01 - createDuenio (201)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Mariel\",\n    \"apellido\": \"Sarachi\",\n    \"dni\": \"12342678\",\n    \"telefono\": 1155551232,\n    \"email\": \"mariel@test.com\",\n    \"mascotas\": []\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/duenios",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 - getAllDuenios (200)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/duenios",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - getDuenioById (200)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/duenios/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "04 - getDuenioById inexistente (404)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/duenios/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "05 - createDuenio DNI duplicado (409)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Mariel\",\n    \"apellido\": \"Sarachi\",\n    \"dni\": \"12342678\",\n    \"telefono\": 1155551232,\n    \"email\": \"mariel@test.com\",\n    \"mascotas\": []\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/duenios",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "06 - updateDuenio (200)",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Carlos Alberto\",\n    \"apellido\": \"González\",\n    \"telefono\": 1199887766,\n    \"email\": \"carlos.gonzalez.nuevo@email.com\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/duenios/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "07 - deleteDuenio (204)",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/duenios/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "08 - deleteDuenio ya borrado (404)",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/duenios/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"duenios",
+						"4"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
