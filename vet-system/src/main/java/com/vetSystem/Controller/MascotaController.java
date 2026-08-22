@@ -1,4 +1,4 @@
 package com.vetSystem.Controller;
 
-public class MascotaRepository {
+public class MascotaController {
 }
