@@ -1,0 +1,252 @@
+{
+  "info": {
+    "_postman_id": "fb20609f-a34e-4128-8b49-5898305e5df4",
+    "name": "VetSystem",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "13972803",
+    "_collection_link": "https://go.postman.co/collection/13972803-fb20609f-a34e-4128-8b49-5898305e5df4?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - createDuenio (201)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set(\"duenioId\", pm.response.json().id);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nombre\": \"Carlos\",\n    \"apellido\": \"González\",\n    \"dni\": \"58543210\",\n    \"telefono\": 1145678901,\n    \"email\": \"carlos.gonzalez@email.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - getAllDuenios (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - getDuenioById (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios/{{duenioId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios",
+            "{{duenioId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - getDuenioById inexistente (404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios/999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios",
+            "999"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - createDuenio DNI duplicado (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nombre\": \"María\",\n    \"apellido\": \"López\",\n    \"dni\": \"58543210\",\n    \"email\": \"maria@email.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - updateDuenio (200)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nombre\": \"Carlos Alberto\",\n    \"apellido\": \"González\",\n    \"telefono\": 1199887766,\n    \"email\": \"carlos.gonzalez.nuevo@email.com\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios/{{duenioId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios",
+            "{{duenioId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - deleteDuenio (204)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios/{{duenioId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios",
+            "{{duenioId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 - deleteDuenio ya borrado (404)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/duenios/{{duenioId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "duenios",
+            "{{duenioId}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "duenioId",
+      "value": 17
+    },
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}
