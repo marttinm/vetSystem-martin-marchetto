@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface DuenioRepository extends JpaRepository<Duenio,Long> {
     boolean existsByDni(String dni);
+    boolean existsById(Long id);
     Optional<Duenio> findByEmail(String email);
 }
