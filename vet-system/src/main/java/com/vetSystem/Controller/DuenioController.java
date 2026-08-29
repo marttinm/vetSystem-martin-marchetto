@@ -1,8 +1,10 @@
 package com.vetSystem.Controller;
 
 import com.vetSystem.Entity.Duenio;
+import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.DuenioService;
+import com.vetSystem.Service.MascotaService;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import java.util.List;
 public class DuenioController {
 
     private final DuenioService duenioService;
+    private final MascotaService mascotaService;
 
     @GetMapping("/{id}")
     public ResponseEntity<Duenio> getDuenioById(@PathVariable Long id) {
@@ -59,6 +62,15 @@ public class DuenioController {
             duenioService.deleteDuenio(id);
             return ResponseEntity.noContent().build();
         } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/mascotas")
+    public ResponseEntity<List<Mascota>> getMascotasByDueno(@PathVariable Long id){
+        try {
+            return ResponseEntity.ok(mascotaService.getMascotasByDueno(id));
+        } catch (ResourceNotFoundException e){
             return ResponseEntity.notFound().build();
         }
     }
