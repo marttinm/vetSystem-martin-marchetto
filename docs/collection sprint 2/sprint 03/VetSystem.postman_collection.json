@@ -248,7 +248,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nombre\": \"Carlos\",\n    \"apellido\": \"González\",\n    \"dni\": \"58543210\",\n    \"telefono\": 1145678901,\n    \"email\": \"carlos.gonzalez@email.com\"\n}",
+              "raw": "{\n    \"nombre\": \"Carlos\",\n    \"apellido\": \"González\",\n    \"dni\": \"58543212\",\n    \"telefono\": 1145678901,\n    \"email\": \"carlos.gonzalez@email.com\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -269,7 +269,70 @@
           "response": []
         },
         {
-          "name": "02 - createMascota (201)",
+          "name": "02 - createMascota (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"mascotaId\", pm.response.json().id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Firulais\",\n    \"especie\": \"Perro\",\n    \"raza\": \"Golden Retriever\",\n    \"fechaNacimiento\": \"2021-03-15\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas?duenioId=999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ],
+              "query": [
+                {
+                  "key": "duenioId",
+                  "value": "999"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 - createMascota (201)",
           "event": [
             {
               "listen": "test",
@@ -332,9 +395,92 @@
           "response": []
         },
         {
-          "name": "03 - deleteMascota (204)",
+          "name": "04 - createMascota 2 (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"mascotaId\", pm.response.json().id);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
-            "method": "DELETE",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Tobb\",\n    \"especie\": \"Gato\",\n    \"raza\": \"Gato blanco\",\n    \"fechaNacimiento\": \"2021-03-15\"\n}\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas?duenioId={{duenioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ],
+              "query": [
+                {
+                  "key": "duenioId",
+                  "value": "{{duenioId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 - getMascotaById/mascotas (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/duenios/{{duenioId}}/mascotas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "duenios",
+                "{{duenioId}}",
+                "mascotas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 - getMascotaById (200)",
+          "request": {
+            "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/duenios/{{duenioId}}",
@@ -351,7 +497,26 @@
           "response": []
         },
         {
-          "name": "04 - deleteDuenio (204)",
+          "name": "07 - deleteMascota (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "{{mascotaId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - deleteDuenio (204)",
           "request": {
             "method": "DELETE",
             "header": [],
