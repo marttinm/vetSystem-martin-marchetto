@@ -3,6 +3,7 @@ package com.vetSystem.Controller;
 import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.MascotaService;
+import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +39,9 @@ public class MascotaController {
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota);
         } catch ( ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        } catch ( EntityExistsException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
     }
 
     @PutMapping("/{id}")
