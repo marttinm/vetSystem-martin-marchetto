@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/** Lo que el servidor DEVUELVE. Ademas de los ids trae los nombres,
- *  para que el cliente pueda mostrar el turno sin pedir dos endpoints mas. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

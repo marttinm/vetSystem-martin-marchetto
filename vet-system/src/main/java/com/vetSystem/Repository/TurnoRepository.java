@@ -11,12 +11,9 @@ import java.util.List;
 @Repository
 public interface TurnoRepository extends JpaRepository<Turno, Long> {
 
-    // Superposicion: el mismo veterinario, la misma fecha y la misma hora.
     boolean existsByVeterinarioIdAndFechaAndHora(Long veterinarioId, LocalDate fecha, LocalTime hora);
 
-    // Agenda de un veterinario para un dia.
     List<Turno> findByVeterinarioIdAndFecha(Long veterinarioId, LocalDate fecha);
 
-    // Historial de una mascota, del turno mas reciente al mas viejo.
     List<Turno> findByMascotaIdOrderByFechaDescHoraDesc(Long mascotaId);
 }

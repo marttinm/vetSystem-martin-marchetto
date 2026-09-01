@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Lo que el cliente ve de un Duenio. Sin la lista de mascotas: se consulta
- *  por el endpoint anidado /api/duenios/{id}/mascotas. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

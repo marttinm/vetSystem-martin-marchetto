@@ -35,7 +35,7 @@ public class DuenioService {
             throw new EntityExistsException("Ya existe un duenio con el DNI " + dto.getDni());
         }
         Duenio duenio = duenioMapper.toEntity(dto);
-        duenio.setId(null); // el id lo genera la base, no el cliente
+        duenio.setId(null);
         return duenioMapper.toDTO(duenioRepository.save(duenio));
     }
 
@@ -43,7 +43,6 @@ public class DuenioService {
     public DuenioDTO updateDuenio(Long id, DuenioDTO dto) {
         Duenio existente = buscarOFallar(id);
 
-        // El DNI no se actualiza: es el identificador de negocio.
         existente.setNombre(dto.getNombre());
         existente.setApellido(dto.getApellido());
         existente.setTelefono(dto.getTelefono());

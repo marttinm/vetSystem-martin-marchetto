@@ -24,8 +24,6 @@ public class Duenio {
     @Column(nullable = false)
     private String email;
 
-    // Lado inverso: no crea ninguna columna. mappedBy apunta al atributo
-    // "duenio" de Mascota, que es el que tiene la FK.
     @OneToMany(mappedBy = "duenio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

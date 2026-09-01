@@ -36,7 +36,6 @@ public class TurnoController {
         }
     }
 
-    // GET /api/turnos/agenda?veterinarioId=1&fecha=2026-07-10
     @GetMapping("/agenda")
     public ResponseEntity<?> getAgenda(@RequestParam Long veterinarioId,
                                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -59,7 +58,6 @@ public class TurnoController {
         }
     }
 
-    // PATCH /api/turnos/1/estado?estado=FINALIZADO&observaciones=...
     @PatchMapping("/{id}/estado")
     public ResponseEntity<TurnoResponseDTO> actualizarEstado(
             @PathVariable Long id,

@@ -56,15 +56,12 @@ public class TurnoService {
 
     @Transactional
     public TurnoResponseDTO createTurno(TurnoRequestDTO request) {
-        // 1. la mascota tiene que existir
         Mascota mascota = mascotaRepository.findById(request.getMascotaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Mascota", request.getMascotaId()));
 
-        // 2. el veterinario tambien
         Veterinario veterinario = veterinarioRepository.findById(request.getVeterinarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Veterinario", request.getVeterinarioId()));
 
-        // 3. y el horario tiene que estar libre para ese veterinario
         if (turnoRepository.existsByVeterinarioIdAndFechaAndHora(
                 request.getVeterinarioId(), request.getFecha(), request.getHora())) {
             throw new EntityExistsException("El veterinario ya tiene un turno el "
@@ -75,7 +72,7 @@ public class TurnoService {
         turno.setFecha(request.getFecha());
         turno.setHora(request.getHora());
         turno.setMotivo(request.getMotivo());
-        turno.setEstado(EstadoTurno.PENDIENTE);   // el estado no lo elige el cliente
+        turno.setEstado(EstadoTurno.PENDIENTE);
         turno.setMascota(mascota);
         turno.setVeterinario(veterinario);
 

@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/** El duenio viaja aplanado: el id y el nombre, no el objeto completo. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

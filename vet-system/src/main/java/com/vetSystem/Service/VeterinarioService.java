@@ -35,7 +35,7 @@ public class VeterinarioService {
             throw new EntityExistsException("Ya existe un veterinario con la matricula " + dto.getMatricula());
         }
         Veterinario veterinario = veterinarioMapper.toEntity(dto);
-        veterinario.setId(null); // el id lo genera la base, no el cliente
+        veterinario.setId(null);
         return veterinarioMapper.toDTO(veterinarioRepository.save(veterinario));
     }
 
@@ -43,8 +43,6 @@ public class VeterinarioService {
     public VeterinarioDTO updateVeterinario(Long id, VeterinarioDTO dto) {
         Veterinario existente = buscarOFallar(id);
 
-        // La matricula no se actualiza: es el identificador profesional,
-        // igual que el DNI en Duenio.
         existente.setNombre(dto.getNombre());
         existente.setApellido(dto.getApellido());
         existente.setEspecialidad(dto.getEspecialidad());

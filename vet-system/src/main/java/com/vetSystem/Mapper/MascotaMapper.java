@@ -10,7 +10,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface MascotaMapper {
 
-    // El duenio se aplana: del objeto relacionado se toman solo dos campos.
     @Mapping(source = "duenio.id", target = "duenioId")
     @Mapping(source = "duenio.nombre", target = "duenioNombre")
     MascotaDTO toDTO(Mascota mascota);
