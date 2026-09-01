@@ -1,8 +1,10 @@
 package com.vetSystem.Service;
 
+import com.vetSystem.Dto.MascotaDTO;
 import com.vetSystem.Entity.Duenio;
 import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Exception.ResourceNotFoundException;
+import com.vetSystem.Mapper.MascotaMapper;
 import com.vetSystem.Repository.DuenioRepository;
 import com.vetSystem.Repository.MascotaRepository;
 import jakarta.persistence.EntityExistsException;
@@ -18,56 +20,59 @@ public class MascotaService {
 
     private final MascotaRepository mascotaRepository;
     private final DuenioRepository duenioRepository;
+    private final MascotaMapper mascotaMapper;
 
     @Transactional(readOnly = true)
-    public List<Mascota> getAllMascotas() {
-        return mascotaRepository.findAll();
+    public List<MascotaDTO> getAllMascotas() {
+        return mascotaMapper.toDTOList(mascotaRepository.findAll());
     }
 
-    @Transactional
-    public Mascota getMascotaById(Long id){
-        return mascotaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Mascota", id));
+    @Transactional(readOnly = true)
+    public MascotaDTO getMascotaById(Long id) {
+        return mascotaMapper.toDTO(buscarOFallar(id));
     }
 
-    @Transactional
-    public List<Mascota> getMascotasByDueno(Long duenioId){
-        if (!duenioRepository.existsById(duenioId)){
+    @Transactional(readOnly = true)
+    public List<MascotaDTO> getMascotasByDueno(Long duenioId) {
+        if (!duenioRepository.existsById(duenioId)) {
             throw new ResourceNotFoundException("Duenio", duenioId);
         }
-        return mascotaRepository.findByDuenioId(duenioId);
+        return mascotaMapper.toDTOList(mascotaRepository.findByDuenioId(duenioId));
     }
 
     @Transactional
-    public Mascota createMascota(Long duenioId, Mascota mascota){
+    public MascotaDTO createMascota(Long duenioId, Mascota mascota) {
         Duenio duenio = duenioRepository.findById(duenioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Duenio", duenioId));
 
-        if (mascotaRepository.existsByNombreAndDuenioId(mascota.getNombre(), duenioId)){
+        if (mascotaRepository.existsByNombreAndDuenioId(mascota.getNombre(), duenioId)) {
             throw new EntityExistsException("Ya existe mascota con nombre " + mascota.getNombre());
         }
+
+        mascota.setId(null);
         mascota.setDuenio(duenio);
-        return mascotaRepository.save(mascota);
+        return mascotaMapper.toDTO(mascotaRepository.save(mascota));
     }
 
     @Transactional
-    public Mascota updateMascota(Long id, Mascota mascota) {
-        Mascota existente = this.getMascotaById(id);
+    public MascotaDTO updateMascota(Long id, Mascota datos) {
+        Mascota existente = buscarOFallar(id);
 
-        existente.setNombre(mascota.getNombre());
-        existente.setEspecie(mascota.getEspecie());
-        existente.setRaza(mascota.getRaza());
-        existente.setFechaNacimiento(mascota.getFechaNacimiento());
+        existente.setNombre(datos.getNombre());
+        existente.setEspecie(datos.getEspecie());
+        existente.setRaza(datos.getRaza());
+        existente.setFechaNacimiento(datos.getFechaNacimiento());
 
-        return mascotaRepository.save(existente);
+        return mascotaMapper.toDTO(mascotaRepository.save(existente));
     }
 
     @Transactional
-    public void deleteMascota(Long id){
-        if (!mascotaRepository.existsById(id)){
-            throw new ResourceNotFoundException("Mascota", id);
-        }
-        mascotaRepository.deleteById(id);
+    public void deleteMascota(Long id) {
+        mascotaRepository.delete(buscarOFallar(id));
     }
 
+    private Mascota buscarOFallar(Long id) {
+        return mascotaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Mascota", id));
+    }
 }

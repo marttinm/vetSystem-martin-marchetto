@@ -1,5 +1,6 @@
 package com.vetSystem.Controller;
 
+import com.vetSystem.Dto.MascotaDTO;
 import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.MascotaService;
@@ -19,7 +20,7 @@ public class MascotaController {
     private final MascotaService mascotaService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<Mascota> getMascotaById(@PathVariable Long id) {
+    public ResponseEntity<MascotaDTO> getMascotaById(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(mascotaService.getMascotaById(id));
         } catch ( ResourceNotFoundException e) {
@@ -28,14 +29,14 @@ public class MascotaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Mascota>> getAllMascotas(){
+    public ResponseEntity<List<MascotaDTO>> getAllMascotas(){
         return ResponseEntity.ok(mascotaService.getAllMascotas());
     }
 
     @PostMapping
     public ResponseEntity<?> createMascota(@RequestParam Long duenioId, @RequestBody Mascota mascota){
         try {
-            Mascota nuevaMascota = mascotaService.createMascota(duenioId, mascota);
+            MascotaDTO nuevaMascota = mascotaService.createMascota(duenioId, mascota);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota);
         } catch ( ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -45,9 +46,9 @@ public class MascotaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Mascota> updateMascota(@PathVariable Long id, @RequestBody Mascota mascota){
+    public ResponseEntity<MascotaDTO> updateMascota(@PathVariable Long id, @RequestBody Mascota mascota){
         try {
-            Mascota updatedMascota = mascotaService.updateMascota(id, mascota);
+            MascotaDTO updatedMascota = mascotaService.updateMascota(id, mascota);
             return ResponseEntity.ok(updatedMascota);
         } catch ( ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
