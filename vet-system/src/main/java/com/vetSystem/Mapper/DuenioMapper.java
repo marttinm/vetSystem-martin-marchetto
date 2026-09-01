@@ -6,8 +6,6 @@ import org.mapstruct.Mapper;
 
 import java.util.List;
 
-/** componentModel = "spring" hace que MapStruct genere la implementacion
- *  como un @Component, para poder inyectarla por constructor. */
 @Mapper(componentModel = "spring")
 public interface DuenioMapper {
     DuenioDTO toDTO(Duenio duenio);
