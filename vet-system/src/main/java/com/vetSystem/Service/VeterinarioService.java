@@ -5,7 +5,7 @@ import com.vetSystem.Entity.Veterinario;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Mapper.VeterinarioMapper;
 import com.vetSystem.Repository.VeterinarioRepository;
-import jakarta.persistence.EntityExistsException;
+import com.vetSystem.Exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +32,7 @@ public class VeterinarioService {
     @Transactional
     public VeterinarioDTO createVeterinario(VeterinarioDTO dto) {
         if (veterinarioRepository.existsByMatricula(dto.getMatricula())) {
-            throw new EntityExistsException("Ya existe un veterinario con la matricula " + dto.getMatricula());
+            throw new DuplicateResourceException("Ya existe un veterinario con la matricula " + dto.getMatricula());
         }
         Veterinario veterinario = veterinarioMapper.toEntity(dto);
         veterinario.setId(null);

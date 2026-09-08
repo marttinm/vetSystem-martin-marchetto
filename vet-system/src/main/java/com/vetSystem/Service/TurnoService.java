@@ -11,7 +11,7 @@ import com.vetSystem.Mapper.TurnoMapper;
 import com.vetSystem.Repository.MascotaRepository;
 import com.vetSystem.Repository.TurnoRepository;
 import com.vetSystem.Repository.VeterinarioRepository;
-import jakarta.persistence.EntityExistsException;
+import com.vetSystem.Exception.TurnoSuperpuestoException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +64,7 @@ public class TurnoService {
 
         if (turnoRepository.existsByVeterinarioIdAndFechaAndHora(
                 request.getVeterinarioId(), request.getFecha(), request.getHora())) {
-            throw new EntityExistsException("El veterinario ya tiene un turno el "
+            throw new TurnoSuperpuestoException("El veterinario ya tiene un turno el "
                     + request.getFecha() + " a las " + request.getHora());
         }
 
