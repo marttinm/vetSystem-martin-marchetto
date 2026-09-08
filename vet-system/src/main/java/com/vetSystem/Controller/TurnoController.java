@@ -3,10 +3,8 @@ package com.vetSystem.Controller;
 import com.vetSystem.Dto.TurnoRequestDTO;
 import com.vetSystem.Dto.TurnoResponseDTO;
 import com.vetSystem.Entity.EstadoTurno;
-import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.TurnoService;
 import jakarta.validation.Valid;
-import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -30,33 +28,19 @@ public class TurnoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TurnoResponseDTO> getTurnoById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(turnoService.getTurnoById(id));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(turnoService.getTurnoById(id));
     }
 
     @GetMapping("/agenda")
     public ResponseEntity<?> getAgenda(@RequestParam Long veterinarioId,
                                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        try {
-            return ResponseEntity.ok(turnoService.getAgenda(veterinarioId, fecha));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+        return ResponseEntity.ok(turnoService.getAgenda(veterinarioId, fecha));
     }
 
     @PostMapping
     public ResponseEntity<?> createTurno(@Valid @RequestBody TurnoRequestDTO request) {
-        try {
-            TurnoResponseDTO nuevo = turnoService.createTurno(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (EntityExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        TurnoResponseDTO nuevo = turnoService.createTurno(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
     }
 
     @PatchMapping("/{id}/estado")
@@ -64,20 +48,12 @@ public class TurnoController {
             @PathVariable Long id,
             @RequestParam EstadoTurno estado,
             @RequestParam(required = false) String observaciones) {
-        try {
-            return ResponseEntity.ok(turnoService.actualizarEstado(id, estado, observaciones));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(turnoService.actualizarEstado(id, estado, observaciones));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTurno(@PathVariable Long id) {
-        try {
-            turnoService.deleteTurno(id);
-            return ResponseEntity.noContent().build();
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        turnoService.deleteTurno(id);
+        return ResponseEntity.noContent().build();
     }
 }
