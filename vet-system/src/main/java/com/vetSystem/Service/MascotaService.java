@@ -41,7 +41,8 @@ public class MascotaService {
     }
 
     @Transactional
-    public MascotaDTO createMascota(Long duenioId, Mascota mascota) {
+    public MascotaDTO createMascota(Long duenioId, MascotaDTO dto) {
+        Mascota mascota = mascotaMapper.toEntity(dto);
         Duenio duenio = duenioRepository.findById(duenioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Duenio", duenioId));
 
@@ -55,7 +56,7 @@ public class MascotaService {
     }
 
     @Transactional
-    public MascotaDTO updateMascota(Long id, Mascota datos) {
+    public MascotaDTO updateMascota(Long id, MascotaDTO datos) {
         Mascota existente = buscarOFallar(id);
 
         existente.setNombre(datos.getNombre());

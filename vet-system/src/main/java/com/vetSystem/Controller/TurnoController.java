@@ -5,6 +5,7 @@ import com.vetSystem.Dto.TurnoResponseDTO;
 import com.vetSystem.Entity.EstadoTurno;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.TurnoService;
+import jakarta.validation.Valid;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -47,7 +48,7 @@ public class TurnoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createTurno(@RequestBody TurnoRequestDTO request) {
+    public ResponseEntity<?> createTurno(@Valid @RequestBody TurnoRequestDTO request) {
         try {
             TurnoResponseDTO nuevo = turnoService.createTurno(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);

@@ -15,4 +15,8 @@ public interface MascotaMapper {
     MascotaDTO toDTO(Mascota mascota);
 
     List<MascotaDTO> toDTOList(List<Mascota> mascotas);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "duenio", ignore = true)
+    Mascota toEntity(MascotaDTO dto);
 }

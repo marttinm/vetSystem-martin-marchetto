@@ -5,6 +5,7 @@ import com.vetSystem.Dto.MascotaDTO;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.DuenioService;
 import com.vetSystem.Service.MascotaService;
+import jakarta.validation.Valid;
 import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class DuenioController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createDuenio(@RequestBody DuenioDTO duenio) {
+    public ResponseEntity<?> createDuenio(@Valid @RequestBody DuenioDTO duenio) {
         try {
             DuenioDTO nuevoDuenio = duenioService.createDuenio(duenio);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevoDuenio);
@@ -46,7 +47,7 @@ public class DuenioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DuenioDTO> updateDuenio(@PathVariable Long id, @RequestBody DuenioDTO duenio) {
+    public ResponseEntity<DuenioDTO> updateDuenio(@PathVariable Long id, @Valid @RequestBody DuenioDTO duenio) {
         try {
             return ResponseEntity.ok(duenioService.updateDuenio(id, duenio));
         } catch (ResourceNotFoundException e) {

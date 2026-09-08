@@ -1,6 +1,7 @@
 package com.vetSystem.Controller;
 
 import com.vetSystem.Dto.MascotaDTO;
+import jakarta.validation.Valid;
 import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Service.MascotaService;
@@ -34,7 +35,7 @@ public class MascotaController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createMascota(@RequestParam Long duenioId, @RequestBody Mascota mascota){
+    public ResponseEntity<?> createMascota(@RequestParam Long duenioId, @Valid @RequestBody MascotaDTO mascota){
         try {
             MascotaDTO nuevaMascota = mascotaService.createMascota(duenioId, mascota);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevaMascota);
@@ -46,7 +47,7 @@ public class MascotaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MascotaDTO> updateMascota(@PathVariable Long id, @RequestBody Mascota mascota){
+    public ResponseEntity<MascotaDTO> updateMascota(@PathVariable Long id, @Valid @RequestBody MascotaDTO mascota){
         try {
             MascotaDTO updatedMascota = mascotaService.updateMascota(id, mascota);
             return ResponseEntity.ok(updatedMascota);
