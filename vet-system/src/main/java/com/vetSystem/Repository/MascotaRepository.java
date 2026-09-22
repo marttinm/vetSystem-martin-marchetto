@@ -11,4 +11,5 @@ public interface MascotaRepository extends JpaRepository<Mascota, Long> {
     List<Mascota> findByDuenioId(Long duenoId);
     boolean existsByNombreAndDuenioId(String nombre, Long duenioId);
     boolean existsById(Long id);
+    long countByDuenioId(Long duenioId);
 }

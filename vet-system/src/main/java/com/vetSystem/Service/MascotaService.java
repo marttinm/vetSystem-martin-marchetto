@@ -3,6 +3,7 @@ package com.vetSystem.Service;
 import com.vetSystem.Dto.MascotaDTO;
 import com.vetSystem.Entity.Duenio;
 import com.vetSystem.Entity.Mascota;
+import com.vetSystem.Exception.BusinessRuleException;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Mapper.MascotaMapper;
 import com.vetSystem.Repository.DuenioRepository;
@@ -17,6 +18,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MascotaService {
+
+    private static final int MAX_MASCOTAS_POR_DUENIO = 5;
 
     private final MascotaRepository mascotaRepository;
     private final DuenioRepository duenioRepository;
@@ -45,6 +48,11 @@ public class MascotaService {
         Mascota mascota = mascotaMapper.toEntity(dto);
         Duenio duenio = duenioRepository.findById(duenioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Duenio", duenioId));
+
+        if (mascotaRepository.countByDuenioId(duenioId) >= MAX_MASCOTAS_POR_DUENIO) {
+            throw new BusinessRuleException("El duenio con id " + duenioId + " ya tiene "
+                    + MAX_MASCOTAS_POR_DUENIO + " mascotas registradas, que es el maximo permitido");
+        }
 
         if (mascotaRepository.existsByNombreAndDuenioId(mascota.getNombre(), duenioId)) {
             throw new DuplicateResourceException("Ya existe mascota con nombre " + mascota.getNombre());
