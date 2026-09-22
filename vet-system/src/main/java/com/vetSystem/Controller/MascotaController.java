@@ -4,6 +4,7 @@ import com.vetSystem.Dto.MascotaDTO;
 import jakarta.validation.Valid;
 import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Service.MascotaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Mascotas", description = "CRUD de las mascotas de la clinica veterinaria")
 @RestController
 @RequestMapping("/api/mascotas")
 @RequiredArgsConstructor
