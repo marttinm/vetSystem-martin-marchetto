@@ -16,4 +16,6 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
     List<Turno> findByVeterinarioIdAndFecha(Long veterinarioId, LocalDate fecha);
 
     List<Turno> findByMascotaIdOrderByFechaDescHoraDesc(Long mascotaId);
+
+    boolean existsByMedicamentosId(Long medicamentoId);
 }
