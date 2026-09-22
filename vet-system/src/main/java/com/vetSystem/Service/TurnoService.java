@@ -1,14 +1,19 @@
 package com.vetSystem.Service;
 
+import com.vetSystem.Dto.MedicamentoResponseDTO;
 import com.vetSystem.Dto.TurnoRequestDTO;
 import com.vetSystem.Dto.TurnoResponseDTO;
 import com.vetSystem.Entity.EstadoTurno;
 import com.vetSystem.Entity.Mascota;
+import com.vetSystem.Entity.Medicamento;
 import com.vetSystem.Entity.Turno;
 import com.vetSystem.Entity.Veterinario;
+import com.vetSystem.Exception.BusinessRuleException;
 import com.vetSystem.Exception.ResourceNotFoundException;
+import com.vetSystem.Mapper.MedicamentoMapper;
 import com.vetSystem.Mapper.TurnoMapper;
 import com.vetSystem.Repository.MascotaRepository;
+import com.vetSystem.Repository.MedicamentoRepository;
 import com.vetSystem.Repository.TurnoRepository;
 import com.vetSystem.Repository.VeterinarioRepository;
 import com.vetSystem.Exception.TurnoSuperpuestoException;
@@ -26,7 +31,9 @@ public class TurnoService {
     private final TurnoRepository turnoRepository;
     private final MascotaRepository mascotaRepository;
     private final VeterinarioRepository veterinarioRepository;
+    private final MedicamentoRepository medicamentoRepository;
     private final TurnoMapper turnoMapper;
+    private final MedicamentoMapper medicamentoMapper;
 
     @Transactional(readOnly = true)
     public List<TurnoResponseDTO> getAllTurnos() {
@@ -92,6 +99,29 @@ public class TurnoService {
     @Transactional
     public void deleteTurno(Long id) {
         turnoRepository.delete(buscarOFallar(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicamentoResponseDTO> getMedicamentosDeTurno(Long turnoId) {
+        return medicamentoMapper.toDTOList(buscarOFallar(turnoId).getMedicamentos());
+    }
+
+    @Transactional
+    public List<MedicamentoResponseDTO> agregarMedicamento(Long turnoId, Long medicamentoId) {
+        Turno turno = buscarOFallar(turnoId);
+        Medicamento medicamento = medicamentoRepository.findById(medicamentoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicamento", medicamentoId));
+
+        if (medicamento.getStock() <= 0) {
+            throw new BusinessRuleException("El medicamento " + medicamento.getNombre()
+                    + " (id " + medicamentoId + ") no tiene stock disponible");
+        }
+
+        medicamento.setStock(medicamento.getStock() - 1);
+        turno.getMedicamentos().add(medicamento);
+        turnoRepository.save(turno);
+
+        return medicamentoMapper.toDTOList(turno.getMedicamentos());
     }
 
     private Turno buscarOFallar(Long id) {
