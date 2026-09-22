@@ -7,7 +7,7 @@ import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Mapper.MascotaMapper;
 import com.vetSystem.Repository.DuenioRepository;
 import com.vetSystem.Repository.MascotaRepository;
-import jakarta.persistence.EntityExistsException;
+import com.vetSystem.Exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,12 +41,13 @@ public class MascotaService {
     }
 
     @Transactional
-    public MascotaDTO createMascota(Long duenioId, Mascota mascota) {
+    public MascotaDTO createMascota(Long duenioId, MascotaDTO dto) {
+        Mascota mascota = mascotaMapper.toEntity(dto);
         Duenio duenio = duenioRepository.findById(duenioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Duenio", duenioId));
 
         if (mascotaRepository.existsByNombreAndDuenioId(mascota.getNombre(), duenioId)) {
-            throw new EntityExistsException("Ya existe mascota con nombre " + mascota.getNombre());
+            throw new DuplicateResourceException("Ya existe mascota con nombre " + mascota.getNombre());
         }
 
         mascota.setId(null);
@@ -55,7 +56,7 @@ public class MascotaService {
     }
 
     @Transactional
-    public MascotaDTO updateMascota(Long id, Mascota datos) {
+    public MascotaDTO updateMascota(Long id, MascotaDTO datos) {
         Mascota existente = buscarOFallar(id);
 
         existente.setNombre(datos.getNombre());

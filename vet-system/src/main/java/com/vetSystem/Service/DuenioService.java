@@ -5,7 +5,7 @@ import com.vetSystem.Entity.Duenio;
 import com.vetSystem.Exception.ResourceNotFoundException;
 import com.vetSystem.Mapper.DuenioMapper;
 import com.vetSystem.Repository.DuenioRepository;
-import jakarta.persistence.EntityExistsException;
+import com.vetSystem.Exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +32,7 @@ public class DuenioService {
     @Transactional
     public DuenioDTO createDuenio(DuenioDTO dto) {
         if (duenioRepository.existsByDni(dto.getDni())) {
-            throw new EntityExistsException("Ya existe un duenio con el DNI " + dto.getDni());
+            throw new DuplicateResourceException("Ya existe un duenio con el DNI " + dto.getDni());
         }
         Duenio duenio = duenioMapper.toEntity(dto);
         duenio.setId(null);
