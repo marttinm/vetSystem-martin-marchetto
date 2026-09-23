@@ -93,7 +93,7 @@ Se valida en `TurnoService.createTurno` antes de guardar. Uso `findFirstByVeteri
 
 ### Cupo de mascotas
 
-Está en `MascotaService.createMascota`, después de verificar que el dueño existe. `countByDuenioId` genera un `SELECT COUNT(*)` filtrado por dueño; si da 5 o más, lanzo `BusinessRuleException` (422) con el dueño y el máximo permitido. El límite está en la constante `MAX_MASCOTAS_POR_DUENIO`. Cuento todas las mascotas del dueño como activas (explicado abajo). Si la clínica quisiera guardar el historial de mascotas dadas de baja, pasaría a un borrado lógico con un campo `activa`.
+Está en `MascotaService.createMascota`, después de verificar que el dueño existe. `countByDuenioId` genera un `SELECT COUNT(*)` filtrado por dueño; si da 5 o más, lanzo `BusinessRuleException` 422 con el dueño y el máximo permitido. El límite está en la constante `MAX_MASCOTAS_POR_DUENIO`. Cuento todas las mascotas del dueño como activas (explicado abajo). Si la clínica quisiera guardar el historial de mascotas dadas de baja, pasaría a un borrado lógico con un campo `activa`.
 
 ### Decisión más difícil
 
