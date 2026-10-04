@@ -1,7 +1,10 @@
 # VetSystem
 
 Sistema de gestión para la clínica veterinaria "Patitas Felices".
-Trabajo práctico de Microservicios y APIs Escalables — Universidad de Palermo, 2026.
+Universidad de Palermo, 2026. El repositorio se utiliza en dos materias:
+
+- **Microservicios y APIs Escalables**: desarrollo de la API REST (sprints y parcial).
+- **DevOps**: Trabajo Práctico Integrador sobre el ciclo de vida y despliegue continuo de la API (contenerización, CI/CD y observabilidad).
 
 ## Integrante
 
@@ -14,8 +17,29 @@ Trabajo práctico de Microservicios y APIs Escalables — Universidad de Palermo
 - PostgreSQL 14
 - Lombok
 - Maven
+- Docker y Docker Compose
 
 ## Cómo levantarlo
+
+### Con Docker
+
+Requiere Docker Desktop corriendo.
+
+1. Crear el archivo de variables de entorno a partir del ejemplo y definir una contraseña:
+
+```bash
+cp .env.example .env
+```
+
+2. Levantar la API y la base de datos:
+
+```bash
+docker compose up --build
+```
+
+La API queda en http://localhost:8080. Para apagar todo, `docker compose down`; para borrar también los datos de la base, `docker compose down -v`.
+
+### Sin Docker
 
 1. Crear la base de datos:
 
@@ -23,14 +47,13 @@ Trabajo práctico de Microservicios y APIs Escalables — Universidad de Palermo
 CREATE DATABASE vet_system;
 ```
 
-2. Revisar la conexión en `vet-system/src/main/resources/application.properties` y ajustar el puerto y el usuario según tu instalación de Postgres:
+2. La conexión se configura con variables de entorno. Si no se definen, se usan estos valores por defecto:
 
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:3306/vet_system
-spring.datasource.username=magic
-```
-
-El puerto es 3306 y no el 5432 por defecto de Postgres, porque quedó configurado así desde la migración de MySQL.
+| Variable | Valor por defecto |
+| --- | --- |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/vet_system` |
+| `DB_USERNAME` | `magic` |
+| `DB_PASSWORD` | (vacío) |
 
 3. Levantar la aplicación:
 
@@ -98,4 +121,4 @@ Está en `MascotaService.createMascota`, después de verificar que el dueño exi
 ### Decisión más difícil
 
 Definir qué es una "mascota activa", porque la consigna lo pide pero `Mascota` no tiene ningún campo para eso. Se me ocurrieron dos opciones: agregar un booleano `activa` o contar todas las mascotas del dueño. Elegí la segunda porque el `DELETE` de mascota es físico, entonces no hay mascotas inactivas en la base.
-El otro problema apareció probando el CRUD de medicamentos, borrar uno que ya estaba recetado rompía por la clave foránea de `turno_medicamentos` y devolvía un 500. Lo resolví chequeando en el servicio si el medicamento está asociado a algún turno, si lo está, devuelvo un 422 explicando por qué no se puede eliminar.
+El otro problema apareció probando el CRUD de medicamentos, borrar uno que ya estaba recetado rompía por la clave foránea de `turno_medicamentos` y devolvía un 500. Lo resolví chequeando en el servicio si el medicamento está asociado a algún turno, si lo está, devuelvo un 427 explicando por qué no se puede eliminar.
