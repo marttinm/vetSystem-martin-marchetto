@@ -10,7 +10,23 @@ Se adoptó Trunk-Based Development: `main` es la única rama permanente y cada c
 La rama `materia-devops`, usada al inicio, se integró a `main` por PR y desde entonces se trabaja con ramas como `ci/github-actions`.
 
 - [ ] Captura del PR de Docker mergeado
-- [ ] Captura de la regla de protección de `main`
+
+### Protección de la rama `main`
+Se configuró una regla de protección sobre `main` que exige Pull Request para integrar cambios y que los checks de CI (`lint / Checkstyle` y `test / Tests`) pasen antes del merge. No se permite saltear la regla, ni siquiera al administrador.
+
+**Problema encontrado**: la regla figuraba como "Not enforced". En el plan gratuito de GitHub las reglas de protección solo se aplican en repositorios públicos, y el repositorio era privado. El PR del pipeline de CI se integró antes de detectarlo. Se cambió la visibilidad del repositorio a público (requisito del TP), tras verificar que el historial no contuviera credenciales.
+
+- [ ] Captura de la regla como "Not enforced" con el repositorio privado
+- [ ] Captura de la regla aplicada, con los checks obligatorios
+
+### Verificación del historial antes de hacer público el repositorio
+Se buscaron credenciales en todo el historial:
+
+```bash
+git --no-pager log -p --all | grep -iE "password|secret|token" | grep -v "DB_PASSWORD"
+```
+
+Resultado: solo aparecen variables del wrapper de Maven (`MVNW_PASSWORD`), la contraseña del PostgreSQL efímero del pipeline (`ci`) y la contraseña por defecto (`root`) de la base local usada antes de la migración desde MySQL. Ninguna es una credencial real. El archivo `.env` nunca se versionó.
 
 ### Conventional Commits
 El historial sigue la convención a partir del commit `83789ee`. Los dos commits iniciales (`b58134b` y `d80ccf3`) son previos a su adopción y no se reescribieron para no alterar el historial ya publicado.
@@ -75,7 +91,15 @@ Resolución:
 - [ ] Captura de `./mvnw checkstyle:check` en verde tras las correcciones
 
 ### Workflow de CI
-- [ ] Captura del workflow corriendo en un PR
+Se ejecuta en cada Pull Request hacia `main`. Está organizado en workflows reutilizables (`on: workflow_call`):
+- `lint.yml`: Checkstyle.
+- `test.yml`: tests con un service container de PostgreSQL 14.
+- `ci.yml`: orquestador que se dispara en el PR y llama a ambos.
+
+Lint y tests corren en paralelo para dar feedback más rápido; como los dos son obligatorios, si cualquiera falla el PR se bloquea igual. El workflow usa permisos de solo lectura y cancela ejecuciones anteriores del mismo PR (`concurrency`).
+
+- [ ] Captura de los checks del PR #N en verde
+- [ ] Captura del historial de ejecuciones en la pestaña Actions
 - [ ] Captura del PR bloqueado cuando falla un check
 
 ### Publicación en Docker Hub
@@ -84,7 +108,9 @@ Resolución:
 ## Fase 5 — Observabilidad
 
 ## Andon Cord (dónde se corta el pipeline)
-- **Linter**: si Checkstyle encuentra violaciones, el comando falla y el job de lint corta el pipeline.
+- **Linter**: si Checkstyle encuentra violaciones, el job `lint / Checkstyle` falla.
+- **Tests**: si algún test falla, el job `test / Tests` falla.
+- **Regla de protección de `main`**: ambos checks son obligatorios y la regla no admite excepciones, por lo que con cualquiera de los dos en rojo el botón de merge queda deshabilitado y el cambio no llega a `main`.
 
 ## Experimento de falla controlada
 
@@ -93,7 +119,9 @@ Resolución:
 ## Decisiones tomadas
 - **Versionado SemVer**: lo exige la Fase 4 para etiquetar la imagen en Docker Hub. Además es coherente con Conventional Commits (`feat` sube el MINOR, `fix` el PATCH).
 - **Trunk-Based Development**: una sola rama permanente y ramas cortas por cambio. Es el modelo más simple para un proyecto individual y favorece entregas en lotes pequeños.
+- **Repositorio público sin aprobaciones obligatorias**: solo el dueño tiene permisos de escritura, por lo que nadie más puede pushear ni mergear; terceros solo pueden proponer cambios desde un fork. No se exige aprobación de reviews porque GitHub no permite aprobar PRs propios y, siendo un único desarrollador, bloquearía todos los merges. El control de calidad lo garantizan los checks obligatorios.
 - **Configuración por variables de entorno**: `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` con valores por defecto locales. El mismo código funciona sin cambios en local, en Docker y en CI.
 - **Paridad de versiones**: Java 21 y PostgreSQL 14 en local, en el contenedor y en el pipeline, para que los entornos sean equivalentes.
 - **Postgres en el pipeline**: `VetSystemApplicationTests` levanta el contexto completo de Spring y necesita una base de datos. En CI se usa un service container de PostgreSQL en lugar de eliminar el test.
 - **Reglas de Checkstyle propias**: se eligieron reglas que detectan problemas reales en lugar de adoptar una configuración externa completa.
+- **Workflows reutilizables**: lint y tests se definen una sola vez y se invocan desde el workflow de CI; el workflow de release va a reutilizar los mismos tests sin duplicar configuración.
