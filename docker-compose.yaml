@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: ./vet-system
+      target: runtime
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
