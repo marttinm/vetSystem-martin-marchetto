@@ -2,7 +2,6 @@ package com.vetSystem.Controller;
 
 import com.vetSystem.Dto.MascotaDTO;
 import jakarta.validation.Valid;
-import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Service.MascotaService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
