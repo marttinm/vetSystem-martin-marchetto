@@ -72,3 +72,30 @@ vet-system/src/main/java/com/vetSystem/
 ├── Service/      lógica de negocio
 └── Controller/   endpoints REST
 ```
+
+## Parcial 1 — Decisiones de diseño
+
+### Relación Turno–Medicamento
+
+Es una relación `@ManyToMany` unidireccional desde `Turno`, con la tabla intermedia `turno_medicamentos (turno_id, medicamento_id)`. Un turno puede recetar varios medicamentos y un medicamento aparece en muchos turnos. La hice unidireccional porque solo necesito ir del turno a sus medicamentos y desde `Medicamento` nunca consulto en qué turnos se usó.
+El esquema lo genera Hibernate con `ddl-auto=update`, que crea tablas y columnas nuevas sin borrar datos. Sirve para desarrollo, pero en producción usaría Flyway o Liquibase, porque `update` no elimina columnas viejas ni deja registro de los cambios.
+No usé una entidad intermedia porque no necesito guardar datos de la receta como dosis o cantidad, si hicieran falta, migraría a esa opción.
+
+### Validación de stock
+
+Está en `TurnoService.agregarMedicamento` y no en el controller, porque es una regla de negocio. Busco el turno y el medicamento, si alguno no existe, lanzo `ResourceNotFoundException` 404. Si el stock es 0, lanzo `BusinessRuleException`, y el `GlobalExceptionHandler` la devuelve como 422 indicando qué medicamento no tiene stock.
+Si hay stock, descuento una unidad y asocio el medicamento al turno dentro de un `@Transactional`, así se guardan las dos cosas o ninguna.
+Una limitación es que dos pedidos simultáneos podrían leer el mismo stock, lo resolvería con bloqueo optimista usando `@Version`.
+
+### Solapamiento
+
+Se valida en `TurnoService.createTurno` antes de guardar. Uso `findFirstByVeterinarioIdAndFechaAndHora`, que compara veterinario, fecha y hora exactas. Antes tenía un `existsBy...`, pero devolvía solo un booleano y la consigna pide informar cuál es el turno en conflicto, así que lo cambié por un `findFirstBy...` que devuelve `Optional<Turno>`. Si viene con valor, lanzo `TurnoSuperpuestoException` 409 con el id, la fecha y la hora del turno que choca. Como comparo la hora exacta, no detecto turnos que se pisan parcialmente, para eso cada turno necesitaría una duración.
+
+### Cupo de mascotas
+
+Está en `MascotaService.createMascota`, después de verificar que el dueño existe. `countByDuenioId` genera un `SELECT COUNT(*)` filtrado por dueño; si da 5 o más, lanzo `BusinessRuleException` 422 con el dueño y el máximo permitido. El límite está en la constante `MAX_MASCOTAS_POR_DUENIO`. Cuento todas las mascotas del dueño como activas (explicado abajo). Si la clínica quisiera guardar el historial de mascotas dadas de baja, pasaría a un borrado lógico con un campo `activa`.
+
+### Decisión más difícil
+
+Definir qué es una "mascota activa", porque la consigna lo pide pero `Mascota` no tiene ningún campo para eso. Se me ocurrieron dos opciones: agregar un booleano `activa` o contar todas las mascotas del dueño. Elegí la segunda porque el `DELETE` de mascota es físico, entonces no hay mascotas inactivas en la base.
+El otro problema apareció probando el CRUD de medicamentos, borrar uno que ya estaba recetado rompía por la clave foránea de `turno_medicamentos` y devolvía un 500. Lo resolví chequeando en el servicio si el medicamento está asociado a algún turno, si lo está, devuelvo un 422 explicando por qué no se puede eliminar.

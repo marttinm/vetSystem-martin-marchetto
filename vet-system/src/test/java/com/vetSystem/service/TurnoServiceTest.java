@@ -7,8 +7,10 @@ import com.vetSystem.Entity.Mascota;
 import com.vetSystem.Entity.Turno;
 import com.vetSystem.Entity.Veterinario;
 import com.vetSystem.Exception.TurnoSuperpuestoException;
+import com.vetSystem.Mapper.MedicamentoMapper;
 import com.vetSystem.Mapper.TurnoMapper;
 import com.vetSystem.Repository.MascotaRepository;
+import com.vetSystem.Repository.MedicamentoRepository;
 import com.vetSystem.Repository.TurnoRepository;
 import com.vetSystem.Repository.VeterinarioRepository;
 import com.vetSystem.Service.TurnoService;
@@ -41,7 +43,11 @@ public class TurnoServiceTest {
     @Mock
     private VeterinarioRepository veterinarioRepository;
     @Mock
+    private MedicamentoRepository medicamentoRepository;
+    @Mock
     private TurnoMapper turnoMapper;
+    @Mock
+    private MedicamentoMapper medicamentoMapper;
 
     private static final LocalDate FECHA = LocalDate.now().plusDays(1);
     private static final LocalTime HORA = LocalTime.of(10, 0);
@@ -61,7 +67,7 @@ public class TurnoServiceTest {
 
         when(mascotaRepository.findById(1L)).thenReturn(Optional.of(mascota));
         when(veterinarioRepository.findById(2L)).thenReturn(Optional.of(veterinario));
-        when(turnoRepository.existsByVeterinarioIdAndFechaAndHora(2L, FECHA, HORA)).thenReturn(false);
+        when(turnoRepository.findFirstByVeterinarioIdAndFechaAndHora(2L, FECHA, HORA)).thenReturn(Optional.empty());
         when(turnoRepository.save(any(Turno.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
         when(turnoMapper.toDTO(any(Turno.class))).thenReturn(respuesta);
         //CUANDO
@@ -79,11 +85,16 @@ public class TurnoServiceTest {
         TurnoRequestDTO request = crearRequest();
         when(mascotaRepository.findById(1L)).thenReturn(Optional.of(new Mascota()));
         when(veterinarioRepository.findById(2L)).thenReturn(Optional.of(new Veterinario()));
-        when(turnoRepository.existsByVeterinarioIdAndFechaAndHora(2L, FECHA, HORA)).thenReturn(true);
+        Turno existente = new Turno();
+        existente.setId(7L);
+        existente.setFecha(FECHA);
+        existente.setHora(HORA);
+        when(turnoRepository.findFirstByVeterinarioIdAndFechaAndHora(2L, FECHA, HORA)).thenReturn(Optional.of(existente));
         //CUANDO
-        assertThrows(TurnoSuperpuestoException.class,
+        TurnoSuperpuestoException ex = assertThrows(TurnoSuperpuestoException.class,
                 () -> turnoService.createTurno(request));
         //ENTONCES
+        assertThat(ex.getMessage()).contains("id 7").contains(HORA.toString());
         verify(turnoRepository, never()).save(any());
     }
 

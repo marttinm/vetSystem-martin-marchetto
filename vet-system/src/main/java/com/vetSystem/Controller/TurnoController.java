@@ -1,5 +1,6 @@
 package com.vetSystem.Controller;
 
+import com.vetSystem.Dto.MedicamentoResponseDTO;
 import com.vetSystem.Dto.TurnoRequestDTO;
 import com.vetSystem.Dto.TurnoResponseDTO;
 import com.vetSystem.Entity.EstadoTurno;
@@ -117,5 +118,37 @@ public class TurnoController {
             @Parameter(description = "ID del turno a eliminar", example = "1") @PathVariable Long id) {
         turnoService.deleteTurno(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Listar los medicamentos recetados en un turno",
+            description = "Devuelve los medicamentos asociados al turno. Si el turno no existe devuelve 404")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Medicamentos del turno"),
+            @ApiResponse(responseCode = "404", description = "No existe un turno con ese ID",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping("/{id}/medicamentos")
+    public ResponseEntity<List<MedicamentoResponseDTO>> getMedicamentosDeTurno(
+            @Parameter(description = "ID del turno", example = "1") @PathVariable Long id) {
+        return ResponseEntity.ok(turnoService.getMedicamentosDeTurno(id));
+    }
+
+    @Operation(
+            summary = "Recetar un medicamento en un turno",
+            description = "Asocia el medicamento al turno y descuenta 1 unidad de su stock. Si el stock es 0 devuelve 422")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Medicamento asociado; devuelve los medicamentos del turno"),
+            @ApiResponse(responseCode = "404", description = "No existe el turno o el medicamento",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "422", description = "El medicamento no tiene stock",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/{turnoId}/medicamentos/{medicamentoId}")
+    public ResponseEntity<List<MedicamentoResponseDTO>> agregarMedicamento(
+            @Parameter(description = "ID del turno", example = "1") @PathVariable Long turnoId,
+            @Parameter(description = "ID del medicamento", example = "1") @PathVariable Long medicamentoId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(turnoService.agregarMedicamento(turnoId, medicamentoId));
     }
 }

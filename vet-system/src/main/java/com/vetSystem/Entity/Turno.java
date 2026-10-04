@@ -9,6 +9,8 @@ import lombok.ToString;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -41,4 +43,12 @@ public class Turno {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Veterinario veterinario;
+
+    @ManyToMany
+    @JoinTable(name = "turno_medicamentos",
+            joinColumns = @JoinColumn(name = "turno_id"),
+            inverseJoinColumns = @JoinColumn(name = "medicamento_id"))
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Medicamento> medicamentos = new ArrayList<>();
 }
