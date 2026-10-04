@@ -100,7 +100,7 @@ Lint y tests corren en paralelo para dar feedback más rápido; como los dos son
 
 - [ ] Captura de los checks del PR #N en verde
 - [ ] Captura del historial de ejecuciones en la pestaña Actions
-- [ ] Captura del PR bloqueado cuando falla un check
+- [x] Captura del PR bloqueado cuando falla un check
 
 ### Publicación en Docker Hub
 - [ ] Captura de la imagen publicada con su tag SemVer
@@ -113,6 +113,21 @@ Lint y tests corren en paralelo para dar feedback más rápido; como los dos son
 - **Regla de protección de `main`**: ambos checks son obligatorios y la regla no admite excepciones, por lo que con cualquiera de los dos en rojo el botón de merge queda deshabilitado y el cambio no llega a `main`.
 
 ## Experimento de falla controlada
+
+### Test unitario roto a propósito ([PR #11](https://github.com/marttinm/vetSystem-martin-marchetto/pull/11))
+**Qué se rompió**: en `DuenioServiceTest.getAllDuenios_cuandoHayDuenios_retornaLista` se cambió el valor esperado del nombre del dueño de `"Carlos"` a `"Carlos1"`, simulando un cambio que introduce un error de lógica.
+
+**Cómo reaccionó el sistema**:
+- El workflow de CI se ejecutó automáticamente al abrir el PR.
+- El job `lint / Checkstyle` pasó, ya que el código cumple las reglas de estilo.
+- El job `test / Tests` falló: la aserción esperaba `"Carlos1"` y el servicio devolvió `"Carlos"`. El log del job indica el test fallido y la diferencia entre ambos valores.
+- GitHub marcó el PR en rojo y la regla de protección de `main` deshabilitó el merge.
+
+**Resultado**: el cambio defectuoso no llegó a `main`. El PR se cerró sin integrar.
+
+**Conclusión**: el Andon Cord funciona como se diseñó: un error detectado por los tests detiene el flujo antes de la integración, sin depender de una revisión manual.
+
+![PR bloqueado por test fallido](img/falla-controlada-pr-bloqueado.png)
 
 ## Desperdicios Lean
 
