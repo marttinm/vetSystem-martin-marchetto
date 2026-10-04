@@ -57,7 +57,7 @@ public class DuenioServiceTest {
         List<DuenioDTO> resultado = duenioService.getAllDuenios();
         //ENTONCES
         assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getNombre()).isEqualTo("Carlos");
+        assertThat(resultado.get(0).getNombre()).isEqualTo("Carlos1");
         verify(duenioRepository).findAll();
     }
 
