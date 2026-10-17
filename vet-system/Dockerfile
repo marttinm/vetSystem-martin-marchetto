@@ -12,7 +12,7 @@ WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring
 
-copy --from=build --chown=spring:spring /app/target/*.jar app.jar
+COPY --from=build --chown=spring:spring /app/target/*.jar app.jar
 
 USER spring
 EXPOSE 8080
