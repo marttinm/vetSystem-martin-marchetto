@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -60,6 +61,13 @@ public class GlobalExceptionHandler {
                                                             HttpServletRequest request) {
         return construir(HttpStatus.BAD_REQUEST,
                 "El cuerpo de la solicitud no es un JSON valido", request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMetodoNoPermitido(HttpRequestMethodNotSupportedException ex,
+                                                                 HttpServletRequest request) {
+        return construir(HttpStatus.METHOD_NOT_ALLOWED,
+                "El metodo " + ex.getMethod() + " no esta permitido en esta ruta", request);
     }
 
     @ExceptionHandler(Exception.class)
