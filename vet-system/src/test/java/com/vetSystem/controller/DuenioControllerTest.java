@@ -117,4 +117,19 @@ public class DuenioControllerTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.path").value("/api/no-existe"));
     }
+
+    //Test 7: POST /api/duenios con un JSON mal formado
+    @Test
+    public void createDuenio_cuandoJsonInvalido_retorna400() throws Exception {
+        //DADO
+        String body = "{\"nombre\":\"Carlos\"";
+        //CUANDO
+        mockMvc.perform(post("/api/duenios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+        //ENTONCES
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+        verify(duenioService, never()).createDuenio(any());
+    }
 }

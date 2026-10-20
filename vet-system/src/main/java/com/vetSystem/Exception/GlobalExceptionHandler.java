@@ -3,6 +3,7 @@ package com.vetSystem.Exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -52,6 +53,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRutaInexistente(NoResourceFoundException ex,
                                                                HttpServletRequest request) {
         return construir(HttpStatus.NOT_FOUND, "La ruta solicitada no existe", request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleJsonInvalido(HttpMessageNotReadableException ex,
+                                                            HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST,
+                "El cuerpo de la solicitud no es un JSON valido", request);
     }
 
     @ExceptionHandler(Exception.class)
