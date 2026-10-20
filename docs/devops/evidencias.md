@@ -347,8 +347,17 @@ El panel de Render muestra el deploy de la `1.1.2` lanzado por el Deploy Hook (2
 
 ![Deploy de la 1.1.2 en Render, lanzado por el Deploy Hook](img/render-deploy-v1.1.2.png)
 
-- [ ] Captura del historial de la alerta (Pending → Firing → Normal)
-- [ ] Captura del email recibido
+- [x] Captura del historial de la alerta (Pending → Firing → Normal)
+
+El historial muestra los horarios en GMT-3: la secuencia de la verificación aparece a las 19:43:10 (*Pending*), 19:44:10 (*Alerting*) y 19:46:10 (*Normal*). Las transiciones a *Pending (Error)* y *Error* de las horas anteriores son las fallas de evaluación descritas en [Problemas encontrados](#problemas-encontrados-2), y la última entrada (19:47:20, *Normal (Updated)*) es el cambio de la regla a `KeepLast`.
+
+![Historial de la alerta de errores 5xx](img/grafana-alerta-historial.png)
+
+- [x] Captura del email recibido
+
+Grafana avisa por email también cuando la alerta se resuelve. El primer email corresponde al experimento con los valores observados a las 21:02:10 UTC (20 errores 5xx por minuto) y el segundo a la verificación de la `1.1.2`.
+
+![Emails de la alerta enviados por Grafana](img/grafana-alerta-email.png)
 
 **Conclusión**: el monitoreo cierra el ciclo de feedback (Segunda Forma). Los tests no cubrían este caso, pero la alerta lo detectó en producción y el aprendizaje volvió al código como un test nuevo (Tercera Forma).
 
