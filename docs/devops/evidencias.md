@@ -19,16 +19,21 @@ Se configuró una regla de protección sobre `main` que exige Pull Request para 
 **Problema encontrado**: la regla figuraba como "Not enforced". En el plan gratuito de GitHub las reglas de protección solo se aplican en repositorios públicos, y el repositorio era privado. El PR del pipeline de CI se integró antes de detectarlo. Se cambió la visibilidad del repositorio a público (requisito del TP), tras verificar que el historial no contuviera credenciales.
 
 - Captura de la regla como "Not enforced" con el repositorio privado: no se tomó en su momento y no se puede reproducir sin volver a hacer privado el repositorio.
-- [ ] Captura de la regla aplicada, con los checks obligatorios
+- [x] Captura de la regla aplicada, con los checks obligatorios
+
+![Regla de protección de main con los checks obligatorios](img/proteccion-main.png)
+
+Además de los checks, la regla exige que la rama esté actualizada con `main` antes del merge, así los tests corren sobre el código que efectivamente se va a integrar.
 
 Configuración actual de la regla, consultada con la API de GitHub:
 
 ```
 $ gh api repos/marttinm/vetSystem-martin-marchetto/branches/main/protection
 required_pull_request_reviews: activo (0 aprobaciones)
-required_status_checks: ["lint / Checkstyle", "test / Tests"]
+required_status_checks: ["lint / Checkstyle", "test / Tests"] (strict: true)
 enforce_admins: true
 allow_force_pushes: false
+allow_deletions: false
 ```
 
 ### Verificación del historial antes de hacer público el repositorio
