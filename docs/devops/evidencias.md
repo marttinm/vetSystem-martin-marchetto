@@ -206,7 +206,6 @@ Unos dos minutos después del hook, el servicio respondía con el comportamiento
 | `PATCH /api/duenios` | 500 | 405 |
 | `GET /api/duenios` y Swagger UI | 200 | 200 |
 
-- [ ] Captura del panel de Render con el deploy de la `1.0.1`
 
 #### Problemas encontrados
 - **Usuario `magic` en producción**: el primer deploy falló con `password authentication failed for user "magic"`. La variable `DB_USERNAME` no estaba bien cargada en Render y Spring usó el valor por defecto de `application.properties`, pensado para el entorno local. Es un caso real de "variable de entorno faltante": la app no avisó que faltaba la variable, sino que intentó conectarse con credenciales de otro entorno.
@@ -339,6 +338,10 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
 | 22:44:01 | La `1.1.2` ya está activa y responde 400: `El valor 'abc' no es valido para el parametro id`. |
 | 22:44:10 | La alerta pasa a *Firing*: la ventana de 2 minutos todavía incluye los 500 anteriores. |
 | 22:46:10 | Sin errores 5xx en la ventana, la alerta vuelve a *Normal*. |
+
+El panel de Render muestra el deploy de la `1.1.2` lanzado por el Deploy Hook (2m41s). En los logs del servicio aparecen, en formato JSON, los pedidos a `/api/duenios/abc` respondidos con 400 por la versión nueva:
+
+![Deploy de la 1.1.2 en Render, lanzado por el Deploy Hook](img/render-deploy-v1.1.2.png)
 
 - [ ] Captura del historial de la alerta (Pending → Firing → Normal)
 - [ ] Captura del email recibido
