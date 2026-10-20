@@ -106,4 +106,15 @@ public class DuenioControllerTest {
                 .andExpect(jsonPath("$.status").value(400));
         verify(duenioService, never()).createDuenio(any());
     }
+
+    //Test 6: GET a una ruta que no existe
+    @Test
+    public void rutaInexistente_retorna404() throws Exception {
+        //CUANDO
+        mockMvc.perform(get("/api/no-existe"))
+        //ENTONCES
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.path").value("/api/no-existe"));
+    }
 }
