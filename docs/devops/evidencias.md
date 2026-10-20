@@ -272,6 +272,7 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
 ### Alerta de errores 5xx
 - **Regla** "Errores 5xx en la API" (carpeta `VetSystem`): usa la misma consulta que el panel de 5xx y se dispara si hay más de 0 errores 5xx por minuto durante al menos 1 minuto. Etiquetas `severity=critical` y `service=vet-system`.
 - **Notificación**: las alertas con `service=vet-system` se envían por email (punto de contacto `email-vet-system`), incluyendo el aviso de resolución.
+- **Si la evaluación falla**: la regla mantiene su último estado (`KeepLast`) en lugar de pasar a *Error*. Así una falla de conexión de Grafana no se confunde con una falla de la API (ver Problemas encontrados).
 
 ### Problemas encontrados
 - **El exportador OTLP no se activaba** ([PR #23](https://github.com/marttinm/vetSystem-martin-marchetto/pull/23)): con la `v1.1.0` desplegada, las métricas no llegaban a Grafana, aunque un dato de prueba enviado a mano con el mismo token sí aparecía. El reporte de condiciones de Actuator mostró la causa:
@@ -284,6 +285,7 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
   En Spring Boot 4 hace falta el módulo `spring-boot-opentelemetry`. Sin él, la autoconfiguración se descarta sin registrar ningún error: la app no enviaba nada y tampoco avisaba. Se agregó la dependencia y el test `MetricasOtlpTest`, que verifica que el registry OTLP exista cuando el envío está activado. Es una falla silenciosa que solo se detectó mirando la plataforma de monitoreo.
 - **Token sin `Basic`**: el header de autenticación tiene que ser `Basic <token>`. Con el token solo, Grafana responde 401.
 - **Arranque lento en Render**: la métrica `application_ready_time` marcó 138 segundos de arranque con la CPU del plan Free. Durante cada deploy, los pedidos quedan esperando hasta que la nueva instancia está lista, y el servicio también tarda en despertar después de 15 minutos sin tráfico.
+- **Falsas alarmas por errores de evaluación**: el historial de la alerta mostró 20 evaluaciones fallidas en dos horas, con el error `dial tcp ...:443: i/o timeout` al consultar el Prometheus de Grafana Cloud. La falla era de la conexión interna de la plataforma, no de la API. Con la configuración por defecto, cada falla pasaba la regla a *Error* y podía enviar un email aunque la app funcionara bien. Una alerta que suena sin motivo deja de tomarse en serio, así que se configuró la regla para mantener su último estado cuando la evaluación falla.
 - **El generador de tráfico se cortaba**: con `set -e`, un pedido fallido terminaba el script. Se cambió para que cuente el fallo como `000` y siga.
 
 ## Andon Cord (dónde se corta el pipeline)
@@ -322,6 +324,16 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
 | 21:02:10 | Tras 1 minuto con errores sostenidos, la alerta pasa a *Firing* y envía el email. |
 
 **Resultado**: la alerta mostró un error real: cuando un parámetro no se puede convertir al tipo esperado, Spring lanza `MethodArgumentTypeMismatchException` y el handler genérico la devolvía como 500. Se corrigió en el [PR #24](https://github.com/marttinm/vetSystem-martin-marchetto/pull/24), que responde 400 e incluye un test.
+
+**Verificación del fix** (release `v1.1.2`, 20/10): mientras Render reemplazaba la versión, se consultó `/api/duenios/abc` cada 15 segundos. La versión anterior seguía respondiendo 500, así que la alerta volvió a dispararse y después se resolvió sola cuando entró la nueva versión:
+
+| Hora | Evento |
+| --- | --- |
+| 22:41:28 | La versión anterior responde 500 a `/api/duenios/abc`. |
+| 22:43:10 | La alerta pasa a *Pending*. |
+| 22:44:01 | La `1.1.2` ya está activa y responde 400: `El valor 'abc' no es valido para el parametro id`. |
+| 22:44:10 | La alerta pasa a *Firing*: la ventana de 2 minutos todavía incluye los 500 anteriores. |
+| 22:46:10 | Sin errores 5xx en la ventana, la alerta vuelve a *Normal*. |
 
 - [ ] Captura del historial de la alerta (Pending → Firing → Normal)
 - [ ] Captura del email recibido
