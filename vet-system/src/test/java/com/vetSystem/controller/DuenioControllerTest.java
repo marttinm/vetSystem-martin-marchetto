@@ -143,4 +143,15 @@ public class DuenioControllerTest {
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.status").value(405));
     }
+
+    //Test 9: GET /api/duenios/abc, id que no es un numero
+    @Test
+    public void getDuenioById_cuandoIdNoEsNumero_retorna400() throws Exception {
+        //CUANDO
+        mockMvc.perform(get("/api/duenios/abc"))
+        //ENTONCES
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+        verify(duenioService, never()).getDuenioById(any());
+    }
 }
