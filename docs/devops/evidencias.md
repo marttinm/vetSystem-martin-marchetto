@@ -221,10 +221,77 @@ Además de la respuesta incorrecta al cliente, afectaban la observabilidad: cual
 
 ## Fase 5 — Observabilidad
 
+### Logs estructurados en JSON ([PR #21](https://github.com/marttinm/vetSystem-martin-marchetto/pull/21))
+- Se usa el logging estructurado nativo de Spring Boot (`logging.structured.format.console=logstash`), sin dependencias nuevas. `@timestamp` se renombra a `timestamp` y se excluyen `@version` y `level_value`.
+- `RequestLoggingFilter` escribe una línea por request con `method`, `path`, `status_code` y `duration_ms` como campos propios del JSON.
+- Se desactivaron el banner de Spring y `spring.jpa.show-sql`, que escriben texto plano directo en la consola y rompían el formato.
+
+```json
+{"timestamp":"2026-10-20T02:27:31.04013043Z","message":"GET /no-existe 404","logger_name":"com.vetSystem.config.RequestLoggingFilter","thread_name":"http-nio-8080-exec-3","level":"INFO","method":"GET","path":"/no-existe","status_code":404,"duration_ms":27}
+```
+
+Validación en el contenedor: las 29 líneas del log de la app, desde el arranque hasta los requests, son JSON válido.
+
+### Métricas hacia Grafana Cloud ([PR #22](https://github.com/marttinm/vetSystem-martin-marchetto/pull/22) y [PR #23](https://github.com/marttinm/vetSystem-martin-marchetto/pull/23))
+- **Plataforma**: Grafana Cloud (plan Free), una de las cuatro opciones de la consigna.
+- **Envío**: Micrometer mide cada request en `http.server.requests` y el registry OTLP lo envía cada 30 segundos directo al endpoint OTLP de Grafana Cloud. No hace falta un agente ni un collector.
+- **Configuración**: variables de entorno `OTLP_METRICS_ENABLED`, `OTLP_METRICS_URL` y `OTLP_METRICS_AUTH`. Si no se definen, el envío queda apagado (CI y entorno local). En Render se cargan como variables del servicio.
+- **Histograma**: `http.server.requests` publica buckets entre 5 ms y 10 s para calcular p50 y p95.
+- En Grafana, la métrica llega como `http_server_requests_milliseconds_count` / `_bucket`, con las etiquetas `job="vet-system"`, `method`, `uri`, `status` y `outcome`.
+
+### Generador de tráfico
+`scripts/generar-trafico.sh` envía pedidos a la API mezclando respuestas 200, 400, 404 y 405. Un pedido fallido (timeout, corte de conexión) se cuenta como `000` y no corta el script.
+
+```
+$ ./scripts/generar-trafico.sh https://vet-system-1-0-0.onrender.com 900
+Generando trafico contra https://vet-system-1-0-0.onrender.com durante 900 segundos...
+HTTP 000: 5 pedidos
+HTTP 200: 870 pedidos
+HTTP 400: 290 pedidos
+HTTP 404: 290 pedidos
+HTTP 405: 291 pedidos
+```
+
+### Dashboard "VetSystem - Golden Signals"
+Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su propia consulta PromQL, que se probó contra los datos reales antes de crear el dashboard por la API de Grafana. Se actualiza cada 30 segundos.
+
+| Panel | Golden Signal | Consulta |
+| --- | --- | --- |
+| Tráfico (requests por minuto) | Tráfico | `sum by (status) (rate(http_server_requests_milliseconds_count{job="vet-system", uri!~"/actuator.*"}[2m])) * 60` |
+| Latencia (p50 / p95) | Latencia | `histogram_quantile(0.95, sum by (le) (rate(http_server_requests_milliseconds_bucket{job="vet-system", uri!~"/actuator.*"}[5m])))` (y 0.50 para el p50) |
+| Errores 4xx (por minuto) | Errores | `sum by (status) (rate(http_server_requests_milliseconds_count{job="vet-system", status=~"4.."}[2m])) * 60` |
+| Errores 5xx (por minuto) | Errores | `sum(rate(http_server_requests_milliseconds_count{job="vet-system", status=~"5.."}[2m])) * 60 or vector(0)` |
+
+- `uri!~"/actuator.*"` excluye los chequeos de salud para que no se cuenten como tráfico de la API.
+- `rate(...)[2m] * 60` convierte el contador acumulado en requests por minuto. La ventana de 2 minutos cubre al menos cuatro envíos de 30 segundos.
+- `histogram_quantile` calcula el percentil a partir de los buckets del histograma.
+- `or vector(0)` hace que el panel de 5xx muestre 0 en lugar de "No data" cuando no hay errores.
+
+![Dashboard con las Golden Signals](img/grafana-dashboard-golden-signals.png)
+
+### Alerta de errores 5xx
+- **Regla** "Errores 5xx en la API" (carpeta `VetSystem`): usa la misma consulta que el panel de 5xx y se dispara si hay más de 0 errores 5xx por minuto durante al menos 1 minuto. Etiquetas `severity=critical` y `service=vet-system`.
+- **Notificación**: las alertas con `service=vet-system` se envían por email (punto de contacto `email-vet-system`), incluyendo el aviso de resolución.
+
+### Problemas encontrados
+- **El exportador OTLP no se activaba** ([PR #23](https://github.com/marttinm/vetSystem-martin-marchetto/pull/23)): con la `v1.1.0` desplegada, las métricas no llegaban a Grafana, aunque un dato de prueba enviado a mano con el mismo token sí aparecía. El reporte de condiciones de Actuator mostró la causa:
+
+  ```
+  negativeMatches OtlpMetricsExportAutoConfiguration
+      OnClassCondition - @ConditionalOnClass did not find required class 'org.springframework.boot.opentelemetry.autoconfigure.OpenTelemetryProperties'
+  ```
+
+  En Spring Boot 4 hace falta el módulo `spring-boot-opentelemetry`. Sin él, la autoconfiguración se descarta sin registrar ningún error: la app no enviaba nada y tampoco avisaba. Se agregó la dependencia y el test `MetricasOtlpTest`, que verifica que el registry OTLP exista cuando el envío está activado. Es una falla silenciosa que solo se detectó mirando la plataforma de monitoreo.
+- **Token sin `Basic`**: el header de autenticación tiene que ser `Basic <token>`. Con el token solo, Grafana responde 401.
+- **Arranque lento en Render**: la métrica `application_ready_time` marcó 138 segundos de arranque con la CPU del plan Free. Durante cada deploy, los pedidos quedan esperando hasta que la nueva instancia está lista, y el servicio también tarda en despertar después de 15 minutos sin tráfico.
+- **El generador de tráfico se cortaba**: con `set -e`, un pedido fallido terminaba el script. Se cambió para que cuente el fallo como `000` y siga.
+
 ## Andon Cord (dónde se corta el pipeline)
 - **Linter**: si Checkstyle encuentra violaciones, el job `lint / Checkstyle` falla.
 - **Tests**: si algún test falla, el job `test / Tests` falla.
 - **Regla de protección de `main`**: ambos checks son obligatorios y la regla no admite excepciones, por lo que con cualquiera de los dos en rojo el botón de merge queda deshabilitado y el cambio no llega a `main`.
+- **Release**: el workflow de release vuelve a correr lint y tests sobre el código del tag. Si alguno falla, no se publica la imagen en Docker Hub ni se despliega en Render.
+- **En producción**: la alerta de errores 5xx avisa por email cuando la API desplegada empieza a fallar, aunque el código haya pasado todos los checks.
 
 ## Experimento de falla controlada
 
@@ -243,7 +310,26 @@ Además de la respuesta incorrecta al cliente, afectaban la observabilidad: cual
 
 ![PR bloqueado por test fallido](img/falla-controlada-pr-bloqueado.png)
 
+### Errores del cliente reportados como 500, detectados por el monitoreo
+**Qué se rompió**: se envió tráfico a la API desplegada en Render pidiendo recursos con ids que no son números (`GET /api/duenios/abc`). Ya se sabía que `GET /api/turnos/1.5` respondía 500; el experimento buscaba comprobar que el monitoreo lo detectara sin intervención manual.
+
+**Cómo reaccionó el sistema** (horarios en UTC):
+
+| Hora | Evento |
+| --- | --- |
+| 20:59 | Empieza el tráfico con ids inválidos (106 respuestas 500 en 5 minutos). |
+| 21:01:10 | La alerta "Errores 5xx en la API" pasa a *Pending*: Grafana detecta errores 5xx. |
+| 21:02:10 | Tras 1 minuto con errores sostenidos, la alerta pasa a *Firing* y envía el email. |
+
+**Resultado**: la alerta mostró un error real: cuando un parámetro no se puede convertir al tipo esperado, Spring lanza `MethodArgumentTypeMismatchException` y el handler genérico la devolvía como 500. Se corrigió en el [PR #24](https://github.com/marttinm/vetSystem-martin-marchetto/pull/24), que responde 400 e incluye un test.
+
+- [ ] Captura del historial de la alerta (Pending → Firing → Normal)
+- [ ] Captura del email recibido
+
+**Conclusión**: el monitoreo cierra el ciclo de feedback (Segunda Forma). Los tests no cubrían este caso, pero la alerta lo detectó en producción y el aprendizaje volvió al código como un test nuevo (Tercera Forma).
+
 ## Desperdicios Lean
+Desarrollados en el informe técnico ([README](../../README.md#4-principios-lean-reducción-de-desperdicio)).
 
 ## Decisiones tomadas
 - **Versionado SemVer**: lo exige la Fase 4 para etiquetar la imagen en Docker Hub. Además es coherente con Conventional Commits (`feat` sube el MINOR, `fix` el PATCH).
@@ -254,4 +340,5 @@ Además de la respuesta incorrecta al cliente, afectaban la observabilidad: cual
 - **Postgres en el pipeline**: `VetSystemApplicationTests` levanta el contexto completo de Spring y necesita una base de datos. En CI se usa un service container de PostgreSQL en lugar de eliminar el test.
 - **Reglas de Checkstyle propias**: se eligieron reglas que detectan problemas reales en lugar de adoptar una configuración externa completa.
 - **Render como plataforma de despliegue**: es gratuito y sus Deploy Hooks aceptan el parámetro `imgURL`, que permite desplegar una versión exacta tal como pide la consigna. Otras plataformas, como DigitalOcean App Platform, cobran por contenedores y no tienen deploy hooks, por lo que habría que desplegar con su API.
+- **Grafana Cloud como plataforma de monitoreo**: su plan gratuito no vence antes de la defensa, recibe OTLP directo desde la app sin agregar un agente a la imagen (importante con los 512 MB del plan Free de Render) y los paneles se definen con PromQL.
 - **Workflows reutilizables**: lint y tests se definen una sola vez y se invocan desde el workflow de CI; el workflow de release va a reutilizar los mismos tests sin duplicar configuración.
