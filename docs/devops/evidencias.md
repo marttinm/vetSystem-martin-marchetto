@@ -328,8 +328,8 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
 | Hora | Evento |
 | --- | --- |
 | 20:59 | Empieza el tráfico con ids inválidos (106 respuestas 500 en 5 minutos). |
-| 21:01:10 | La alerta "Errores 5xx en la API" pasa a *Pending*: Grafana detecta errores 5xx. |
-| 21:02:10 | Tras 1 minuto con errores sostenidos, la alerta pasa a *Firing* y envía el email. |
+| 21:01:10 | La evaluación de la regla falla por un error de conexión de Grafana Cloud y la alerta queda en *Pending (Error)*. |
+| 21:02:10 | La evaluación siguiente detecta 19,3 errores 5xx por minuto y la alerta pasa a *Firing* y envía el email. |
 
 **Resultado**: la alerta mostró un error real: cuando un parámetro no se puede convertir al tipo esperado, Spring lanza `MethodArgumentTypeMismatchException` y el handler genérico la devolvía como 500. Se corrigió en el [PR #24](https://github.com/marttinm/vetSystem-martin-marchetto/pull/24), que responde 400 e incluye un test.
 
