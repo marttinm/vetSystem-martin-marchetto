@@ -9,6 +9,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -61,6 +62,13 @@ public class GlobalExceptionHandler {
                                                             HttpServletRequest request) {
         return construir(HttpStatus.BAD_REQUEST,
                 "El cuerpo de la solicitud no es un JSON valido", request);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTipoInvalido(MethodArgumentTypeMismatchException ex,
+                                                            HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST,
+                "El valor '" + ex.getValue() + "' no es valido para el parametro " + ex.getName(), request);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
