@@ -23,6 +23,14 @@ jobs:
     secrets:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
+  deploy:
+    needs: publish
+    uses: ./.github/workflows/deploy-render.yml
+    with:
+      image: ${{ needs.publish.outputs.image }}
+    secrets:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+
   github-release:
     name: Crear Release en GitHub
     needs: publish
