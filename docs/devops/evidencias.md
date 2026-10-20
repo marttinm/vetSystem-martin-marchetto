@@ -206,6 +206,10 @@ Unos dos minutos después del hook, el servicio respondía con el comportamiento
 | `PATCH /api/duenios` | 500 | 405 |
 | `GET /api/duenios` y Swagger UI | 200 | 200 |
 
+En el panel de Render, el deploy `dep-dbbcje8m7kps73eg44m0` (el mismo id que devolvió el hook) figura con la versión `1.0.1` y el Deploy Hook como origen:
+
+![Deploy de la 1.0.1 en Render, lanzado por el Deploy Hook](img/render-deploy-v1.0.1.png)
+
 
 #### Problemas encontrados
 - **Usuario `magic` en producción**: el primer deploy falló con `password authentication failed for user "magic"`. La variable `DB_USERNAME` no estaba bien cargada en Render y Spring usó el valor por defecto de `application.properties`, pensado para el entorno local. Es un caso real de "variable de entorno faltante": la app no avisó que faltaba la variable, sino que intentó conectarse con credenciales de otro entorno.
