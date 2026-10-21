@@ -19,16 +19,21 @@ Se configuró una regla de protección sobre `main` que exige Pull Request para 
 **Problema encontrado**: la regla figuraba como "Not enforced". En el plan gratuito de GitHub las reglas de protección solo se aplican en repositorios públicos, y el repositorio era privado. El PR del pipeline de CI se integró antes de detectarlo. Se cambió la visibilidad del repositorio a público (requisito del TP), tras verificar que el historial no contuviera credenciales.
 
 - Captura de la regla como "Not enforced" con el repositorio privado: no se tomó en su momento y no se puede reproducir sin volver a hacer privado el repositorio.
-- [ ] Captura de la regla aplicada, con los checks obligatorios
+- [x] Captura de la regla aplicada, con los checks obligatorios
+
+![Regla de protección de main con los checks obligatorios](img/proteccion-main.png)
+
+Además de los checks, la regla exige que la rama esté actualizada con `main` antes del merge, así los tests corren sobre el código que efectivamente se va a integrar.
 
 Configuración actual de la regla, consultada con la API de GitHub:
 
 ```
 $ gh api repos/marttinm/vetSystem-martin-marchetto/branches/main/protection
 required_pull_request_reviews: activo (0 aprobaciones)
-required_status_checks: ["lint / Checkstyle", "test / Tests"]
+required_status_checks: ["lint / Checkstyle", "test / Tests"] (strict: true)
 enforce_admins: true
 allow_force_pushes: false
+allow_deletions: false
 ```
 
 ### Verificación del historial antes de hacer público el repositorio
@@ -201,7 +206,10 @@ Unos dos minutos después del hook, el servicio respondía con el comportamiento
 | `PATCH /api/duenios` | 500 | 405 |
 | `GET /api/duenios` y Swagger UI | 200 | 200 |
 
-- [ ] Captura del panel de Render con el deploy de la `1.0.1`
+En el panel de Render, el deploy `dep-dbbcje8m7kps73eg44m0` (el mismo id que devolvió el hook) figura con la versión `1.0.1` y el Deploy Hook como origen:
+
+![Deploy de la 1.0.1 en Render, lanzado por el Deploy Hook](img/render-deploy-v1.0.1.png)
+
 
 #### Problemas encontrados
 - **Usuario `magic` en producción**: el primer deploy falló con `password authentication failed for user "magic"`. La variable `DB_USERNAME` no estaba bien cargada en Render y Spring usó el valor por defecto de `application.properties`, pensado para el entorno local. Es un caso real de "variable de entorno faltante": la app no avisó que faltaba la variable, sino que intentó conectarse con credenciales de otro entorno.
@@ -320,8 +328,8 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
 | Hora | Evento |
 | --- | --- |
 | 20:59 | Empieza el tráfico con ids inválidos (106 respuestas 500 en 5 minutos). |
-| 21:01:10 | La alerta "Errores 5xx en la API" pasa a *Pending*: Grafana detecta errores 5xx. |
-| 21:02:10 | Tras 1 minuto con errores sostenidos, la alerta pasa a *Firing* y envía el email. |
+| 21:01:10 | La evaluación de la regla falla por un error de conexión de Grafana Cloud y la alerta queda en *Pending (Error)*. |
+| 21:02:10 | La evaluación siguiente detecta 19,3 errores 5xx por minuto y la alerta pasa a *Firing* y envía el email. |
 
 **Resultado**: la alerta mostró un error real: cuando un parámetro no se puede convertir al tipo esperado, Spring lanza `MethodArgumentTypeMismatchException` y el handler genérico la devolvía como 500. Se corrigió en el [PR #24](https://github.com/marttinm/vetSystem-martin-marchetto/pull/24), que responde 400 e incluye un test.
 
@@ -335,8 +343,25 @@ Diseñado desde cero, sin plantillas de Grafana. Cada panel se definió con su p
 | 22:44:10 | La alerta pasa a *Firing*: la ventana de 2 minutos todavía incluye los 500 anteriores. |
 | 22:46:10 | Sin errores 5xx en la ventana, la alerta vuelve a *Normal*. |
 
-- [ ] Captura del historial de la alerta (Pending → Firing → Normal)
-- [ ] Captura del email recibido
+El panel de Render muestra el deploy de la `1.1.2` lanzado por el Deploy Hook (2m41s). En los logs del servicio aparecen, en formato JSON, los pedidos a `/api/duenios/abc` respondidos con 400 por la versión nueva:
+
+![Deploy de la 1.1.2 en Render, lanzado por el Deploy Hook](img/render-deploy-v1.1.2.png)
+
+- [x] Captura del historial de la alerta (Pending → Firing → Normal)
+
+El historial muestra los horarios en GMT-3: la secuencia de la verificación aparece a las 19:43:10 (*Pending*), 19:44:10 (*Alerting*) y 19:46:10 (*Normal*). Las transiciones a *Pending (Error)* y *Error* de las horas anteriores son las fallas de evaluación descritas en [Problemas encontrados](#problemas-encontrados-2), y la última entrada (19:47:20, *Normal (Updated)*) es el cambio de la regla a `KeepLast`.
+
+![Historial de la alerta de errores 5xx](img/grafana-alerta-historial.png)
+
+- [x] Captura del email recibido
+
+Cuando la alerta pasa a *Firing*, Grafana envía un email con la cantidad de errores detectados. El primero corresponde al experimento (19,3 errores 5xx por minuto, observados a las 21:02:10 UTC) y el segundo a la verificación de la `1.1.2` (4,2 errores por minuto a las 22:44:10 UTC):
+
+![Emails de la alerta en estado Firing](img/grafana-alerta-email-firing.png)
+
+Cuando la alerta se resuelve, Grafana envía otro email con el aviso de resolución:
+
+![Emails de resolución de la alerta](img/grafana-alerta-email-resuelta.png)
 
 **Conclusión**: el monitoreo cierra el ciclo de feedback (Segunda Forma). Los tests no cubrían este caso, pero la alerta lo detectó en producción y el aprendizaje volvió al código como un test nuevo (Tercera Forma).
 
