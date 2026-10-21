@@ -355,9 +355,13 @@ El historial muestra los horarios en GMT-3: la secuencia de la verificación apa
 
 - [x] Captura del email recibido
 
-Grafana avisa por email también cuando la alerta se resuelve. El primer email corresponde al experimento con los valores observados a las 21:02:10 UTC (20 errores 5xx por minuto) y el segundo a la verificación de la `1.1.2`.
+Cuando la alerta pasa a *Firing*, Grafana envía un email con la cantidad de errores detectados. El primero corresponde al experimento (19,3 errores 5xx por minuto, observados a las 21:02:10 UTC) y el segundo a la verificación de la `1.1.2` (4,2 errores por minuto a las 22:44:10 UTC):
 
-![Emails de la alerta enviados por Grafana](img/grafana-alerta-email.png)
+![Emails de la alerta en estado Firing](img/grafana-alerta-email-firing.png)
+
+Cuando la alerta se resuelve, Grafana envía otro email con el aviso de resolución:
+
+![Emails de resolución de la alerta](img/grafana-alerta-email-resuelta.png)
 
 **Conclusión**: el monitoreo cierra el ciclo de feedback (Segunda Forma). Los tests no cubrían este caso, pero la alerta lo detectó en producción y el aprendizaje volvió al código como un test nuevo (Tercera Forma).
 
