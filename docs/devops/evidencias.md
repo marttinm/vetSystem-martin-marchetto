@@ -48,6 +48,8 @@ Resultado: solo aparecen variables del wrapper de Maven (`MVNW_PASSWORD`), la co
 ### Conventional Commits
 El historial sigue la convención a partir del commit `83789ee`. Los dos commits iniciales (`b58134b` y `d80ccf3`) son previos a su adopción y no se reescribieron para no alterar el historial ya publicado.
 
+Esos tres primeros commits (`b58134b`, `d80ccf3` y `83789ee`, de agosto) también entraron directo a `main`, sin Pull Request. Corresponden al sprint 1 de la materia de Microservicios, antes de empezar el TP: a partir del sprint 2 ([PR #1](https://github.com/marttinm/vetSystem-martin-marchetto/pull/1)) todos los cambios se integraron por Pull Request.
+
 Hay una excepción posterior: `420ab8b` ("Enhance README with project details and setup instructions"), una edición del README hecha desde la interfaz web de GitHub. Además de no seguir la convención, se integró directo en `main` sin Pull Request, porque en ese momento la regla de protección de `main` todavía no se aplicaba. Tampoco se reescribió: hacerlo implicaría un force push sobre `main`, que ya está publicada y protegida. Desde que la regla se aplica, cualquier push directo a `main` es rechazado.
 
 ## Fase 3 — Docker
