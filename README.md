@@ -205,8 +205,8 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-- **Multi-stage**: la etapa `build` tiene Maven y el JDK completo; la etapa `runtime` solo tiene el JRE y el `.jar`. La imagen final pesa 266 MB (120,7 MB comprimida en Docker Hub), mientras que solo la imagen base de la etapa de build pesa 386 MB, sin contar las dependencias descargadas.
-- **Imagen base ligera y específica**: variantes `alpine` con versiones fijas. No se usa el tag `latest`, así que el build es reproducible.
+- **Multi-stage**: la etapa `build` tiene Maven y el JDK completo; la etapa `runtime` solo tiene el JRE y el `.jar`. La imagen final de la `v1.1.2` pesa 272 MB (125,7 MB comprimida en Docker Hub), mientras que solo la imagen base de la etapa de build pesa 386 MB, sin contar las dependencias descargadas.
+- **Imagen base ligera y específica**: variantes `alpine` con la versión de Java (21) y de Maven (3.9.9) fijadas en el tag. No se usa el tag `latest`, así que un cambio de versión mayor no puede colarse en el build.
 - **Caché de capas**: se copia primero el `pom.xml` y se descargan las dependencias, y recién después se copia el código. Si cambia el código pero no el `pom.xml`, la descarga de dependencias sale de la caché (ver la evidencia en [evidencias.md](docs/devops/evidencias.md#dockerfile)). En CI, el build usa además la caché de GitHub Actions.
 - **Usuario sin privilegios**: la app corre con el usuario `spring` (`docker compose exec app whoami` responde `spring`). Si alguien comprometiera la app, no tendría permisos de root dentro del contenedor.
 - **Tests fuera del build de la imagen** (`-DskipTests`): los tests ya corren en CI antes de publicar, con una base de datos real. Repetirlos dentro del build alargaría cada construcción sin agregar verificación.
@@ -215,10 +215,10 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 ### Estrategia de integración
 
-- **Trunk-Based Development**: `main` es la única rama permanente. Cada cambio se trabaja en una rama corta (`feat/`, `fix/`, `ci/`, `docs/`, `build/`) y se integra por Pull Request. Es el modelo más simple para un proyecto individual y favorece entregas en lotes pequeños.
+- **Trunk-Based Development**: `main` es la única rama permanente. Cada cambio se trabaja en una rama corta (`feat/`, `fix/`, `ci/`, `docs/`, `build/`, `test/`) y se integra por Pull Request. Es el modelo más simple para un proyecto individual y favorece entregas en lotes pequeños.
 - **Protección de `main`**: exige Pull Request y los checks `lint / Checkstyle` y `test / Tests` en verde, sin excepciones para el administrador y sin force push. No se exigen aprobaciones porque GitHub no permite aprobar los PRs propios y, con un único desarrollador, bloquearía todos los merges.
-- **Pull Requests documentados**: cada PR incluye una descripción del cambio y una sección "Evidencia de pruebas" con la salida de los tests o de la verificación manual.
-- **Conventional Commits**: `feat:`, `fix:`, `docs:`, `ci:`, `build:`, `style:`, `refactor:`. Las excepciones del historial están documentadas en [evidencias.md](docs/devops/evidencias.md#conventional-commits).
+- **Pull Requests documentados**: cada PR del TP incluye una descripción del cambio y una sección "Evidencia de pruebas" con la salida de los tests o de la verificación manual. La excepción es el PR #9, que creó el propio pipeline de CI.
+- **Conventional Commits**: `feat:`, `fix:`, `docs:`, `ci:`, `build:`, `test:`, `style:`, `refactor:`, `chore:`. Las excepciones del historial están documentadas en [evidencias.md](docs/devops/evidencias.md#conventional-commits).
 - **SemVer**: el tipo de commit define la versión. `feat` sube el MINOR, `fix` sube el PATCH, y `ci`/`docs` no generan versión por sí solos. El tag de Git `vX.Y.Z` se publica en Docker Hub como `vet-system:X.Y.Z`.
 
 ## 3. Aplicación de la filosofía DevOps
