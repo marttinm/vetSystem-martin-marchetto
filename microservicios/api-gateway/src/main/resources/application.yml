@@ -1,0 +1,6 @@
+# Puerto, rutas, CORS y Actuator vienen del Config Server (repositorio vetSystem-config)
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: "configserver:http://localhost:8888"
