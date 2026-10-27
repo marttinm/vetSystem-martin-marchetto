@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/turno_db}
+    username: ${DB_USERNAME:magic}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 3000
+            read-timeout: 5000
+            logger-level: basic
+      compression:
+        request:
+          enabled: true
+        response:
+          enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,mappings
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ms-turno
+    description: Microservicio de gestion de turnos - Patitas Felices
+    version: 1.0.0
+
+logging:
+  level:
+    com.vetSystem.turno.adapter.out.feign: DEBUG
