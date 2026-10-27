@@ -40,6 +40,12 @@ spring:
               uri: lb://ms-turno
               predicates:
                 - Path=/api/turnos/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
 
 management:
   endpoints:
