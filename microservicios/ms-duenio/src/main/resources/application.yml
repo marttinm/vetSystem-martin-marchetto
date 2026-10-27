@@ -1,13 +1,9 @@
+# La base de datos, JPA y Eureka vienen del Config Server (repositorio vetSystem-config)
 spring:
   application:
     name: ms-duenio
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/duenio_db}
-    username: ${DB_USERNAME:magic}
-    password: ${DB_PASSWORD:}
-  jpa:
-    hibernate:
-      ddl-auto: update
+  config:
+    import: "optional:configserver:http://localhost:8888"
 
 server:
   port: 8081
