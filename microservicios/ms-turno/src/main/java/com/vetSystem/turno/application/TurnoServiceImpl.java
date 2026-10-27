@@ -1,11 +1,15 @@
 package com.vetSystem.turno.application;
 
+import com.vetSystem.turno.domain.exception.MascotaNotFoundException;
 import com.vetSystem.turno.domain.exception.TurnoNotFoundException;
 import com.vetSystem.turno.domain.exception.TurnoSuperpuestoException;
+import com.vetSystem.turno.domain.exception.VeterinarioNotFoundException;
 import com.vetSystem.turno.domain.model.EstadoTurno;
 import com.vetSystem.turno.domain.model.Turno;
 import com.vetSystem.turno.domain.port.in.TurnoService;
+import com.vetSystem.turno.domain.port.out.MascotaServicePort;
 import com.vetSystem.turno.domain.port.out.TurnoRepositoryPort;
+import com.vetSystem.turno.domain.port.out.VeterinarioServicePort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +19,15 @@ import java.util.List;
 public class TurnoServiceImpl implements TurnoService {
 
     private final TurnoRepositoryPort turnoRepository;
+    private final MascotaServicePort mascotaService;
+    private final VeterinarioServicePort veterinarioService;
 
-    public TurnoServiceImpl(TurnoRepositoryPort turnoRepository) {
+    public TurnoServiceImpl(TurnoRepositoryPort turnoRepository,
+                            MascotaServicePort mascotaService,
+                            VeterinarioServicePort veterinarioService) {
         this.turnoRepository = turnoRepository;
+        this.mascotaService = mascotaService;
+        this.veterinarioService = veterinarioService;
     }
 
     @Override
@@ -48,6 +58,13 @@ public class TurnoServiceImpl implements TurnoService {
     @Override
     @Transactional
     public Turno save(Turno turno) {
+        // La mascota y el veterinario viven en otros microservicios: se consultan por sus puertos
+        if (!mascotaService.existsById(turno.getMascotaId())) {
+            throw new MascotaNotFoundException(turno.getMascotaId());
+        }
+        if (!veterinarioService.existsById(turno.getVeterinarioId())) {
+            throw new VeterinarioNotFoundException(turno.getVeterinarioId());
+        }
         turnoRepository.findFirstByVeterinarioIdAndFechaAndHora(
                         turno.getVeterinarioId(), turno.getFecha(), turno.getHora())
                 .ifPresent(conflicto -> {
