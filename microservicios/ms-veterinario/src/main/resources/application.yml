@@ -1,4 +1,4 @@
-# La base de datos, JPA y Eureka vienen del Config Server (repositorio vetSystem-config)
+# La base de datos, JPA y Eureka vienen del Config Server (config-server/src/main/resources/config)
 spring:
   application:
     name: ms-veterinario
