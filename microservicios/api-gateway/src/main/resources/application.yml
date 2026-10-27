@@ -5,6 +5,19 @@ spring:
     gateway:
       server:
         webflux:
+          # En produccion reemplazar el "*" por el dominio real del frontend
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: false
           discovery:
             locator:
               enabled: true
