@@ -1,6 +1,7 @@
 # VetSystem — Microservicios
 
-Segunda fase de VetSystem: el monolito de `vet-system/` se divide en microservicios.
+Segunda fase de VetSystem, el sistema de gestión de la clínica veterinaria "Patitas Felices" (Universidad de Palermo, 2026): el monolito se divide en microservicios.
+El monolito de la primera fase (sprints 1 a 8 y el TP de DevOps) está en la rama [`main`](https://github.com/marttinm/vetSystem-martin-marchetto/tree/main).
 Es un proyecto Maven multi-módulo (`pom.xml` padre con `packaging` `pom`), y cada microservicio es un módulo con su propia base de datos.
 
 | Componente | Puerto | Base de datos | Rol |
@@ -28,7 +29,7 @@ Requiere Java 21, Maven y PostgreSQL corriendo en `localhost:5432`.
    createdb turno_db
    ```
 
-2. Compilar todos los módulos desde esta carpeta:
+2. Compilar todos los módulos desde la raíz del repo:
 
    ```bash
    mvn clean package
