@@ -98,6 +98,7 @@ Los clientes (Postman, un frontend) solo hablan con el gateway en el puerto **80
   [GATEWAY] <-- GET /api/duenios 200 70ms
   ```
 
+## Comunicación entre microservicios
 
 Al registrar un turno, `ms-turno` valida que la mascota y el veterinario existan llamando a `ms-mascota` y `ms-veterinario` con **OpenFeign**. Los clientes usan el nombre con el que cada servicio se registra en Eureka (`@FeignClient(name = "ms-mascota")`), así que no hay IPs ni puertos hardcodeados: Spring Cloud LoadBalancer resuelve el nombre contra Eureka en cada llamada.
 
