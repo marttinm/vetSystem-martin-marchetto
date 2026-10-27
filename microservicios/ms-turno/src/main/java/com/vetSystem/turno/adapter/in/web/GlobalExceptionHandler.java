@@ -1,7 +1,10 @@
 package com.vetSystem.turno.adapter.in.web;
 
+import com.vetSystem.turno.domain.exception.MascotaNotFoundException;
 import com.vetSystem.turno.domain.exception.TurnoNotFoundException;
 import com.vetSystem.turno.domain.exception.TurnoSuperpuestoException;
+import com.vetSystem.turno.domain.exception.VeterinarioNotFoundException;
+import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoEncontrado(TurnoNotFoundException ex,
                                                             HttpServletRequest request) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MascotaNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleMascota(MascotaNotFoundException ex,
+                                                       HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(VeterinarioNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleVeterinario(VeterinarioNotFoundException ex,
+                                                           HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // Servicio remoto caido, timeout o error 5xx del otro microservicio
+    @ExceptionHandler(FeignException.class)
+    public ResponseEntity<ErrorResponse> handleFeign(FeignException ex, HttpServletRequest request) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE,
+                "Servicio remoto no disponible: " + ex.getMessage(), request);
     }
 
     @ExceptionHandler(TurnoSuperpuestoException.class)
