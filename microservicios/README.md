@@ -7,6 +7,7 @@ Es un proyecto Maven multi-módulo (`pom.xml` padre con `packaging` `pom`), y ca
 | --- | --- | --- | --- |
 | config-server | 8888 | — | Configuración centralizada, leída del repo [vetSystem-config](https://github.com/marttinm/vetSystem-config) |
 | eureka-server | 8761 | — | Service Discovery: registro y localización de los servicios |
+| api-gateway | 8080 | — | Único punto de entrada: enruta `/api/**` a cada microservicio vía Eureka |
 | ms-duenio | 8081 | duenio_db | CRUD de dueños |
 | ms-mascota | 8082 | mascota_db | CRUD de mascotas (referencia al dueño por `duenioId`) |
 | ms-veterinario | 8083 | veterinario_db | CRUD de veterinarios |
@@ -42,6 +43,7 @@ Requiere Java 21, Maven y PostgreSQL corriendo en `localhost:5432`.
    mvn spring-boot:run -pl ms-mascota
    mvn spring-boot:run -pl ms-veterinario
    mvn spring-boot:run -pl ms-turno
+   mvn spring-boot:run -pl api-gateway      # 4. el gateway, al final
    ```
 
    Si un microservicio arranca antes que el Config Server no obtiene su configuración (base de datos, JPA, Eureka, Actuator). Si arranca antes que Eureka no se puede registrar, pero reintenta solo.
@@ -50,7 +52,8 @@ Requiere Java 21, Maven y PostgreSQL corriendo en `localhost:5432`.
 
 4. Verificar:
 
-   - Dashboard de Eureka: http://localhost:8761 (tienen que aparecer los cuatro microservicios en UP)
+   - Dashboard de Eureka: http://localhost:8761 (tienen que aparecer los cuatro microservicios y el API-GATEWAY en UP)
+   - Rutas del gateway: http://localhost:8080/actuator/gateway/routes
    - Configuración que entrega el Config Server: http://localhost:8888/ms-duenio/default
    - Swagger de cada microservicio: `http://localhost:<puerto>/swagger-ui/index.html`
    - Actuator: `http://localhost:<puerto>/actuator/health` y `/actuator/info`
@@ -59,7 +62,7 @@ Requiere Java 21, Maven y PostgreSQL corriendo en `localhost:5432`.
 
 ## Configuración centralizada
 
-Cada microservicio solo tiene en su `application.yml` el nombre, el puerto y la dirección del Config Server:
+Cada microservicio solo tiene en su `application.yml` el nombre, el puerto y la dirección del Config Server (el `api-gateway` ni siquiera el puerto):
 
 ```yaml
 spring:
@@ -73,8 +76,28 @@ El resto viene del repositorio [vetSystem-config](https://github.com/marttinm/ve
 
 - `application.yml`: configuración compartida (URL de Eureka).
 - `ms-<nombre>.yml`: base de datos, JPA, endpoints de Actuator expuestos (`health`, `info`, `metrics`, `env`, `beans`, `mappings`) y datos de `/actuator/info`.
+- `api-gateway.yml`: puerto, rutas, CORS y endpoints de Actuator del gateway.
 
-## Comunicación entre microservicios
+## API Gateway
+
+Los clientes (Postman, un frontend) solo hablan con el gateway en el puerto **8080**; los puertos 8081-8084 son un detalle interno. El gateway usa Spring Cloud Gateway (WebFlux) y resuelve cada destino con `lb://<servicio>` contra Eureka, balanceando entre las instancias disponibles.
+
+| Path externo (:8080) | Microservicio destino | Puerto interno |
+| --- | --- | --- |
+| `/api/duenios/**` | ms-duenio | 8081 |
+| `/api/mascotas/**` | ms-mascota | 8082 |
+| `/api/veterinarios/**` | ms-veterinario | 8083 |
+| `/api/turnos/**` | ms-turno | 8084 |
+| `/actuator/**` | api-gateway (propio) | 8080 |
+
+- **CORS**: configuración global que permite `GET`, `POST`, `PUT`, `DELETE` y `OPTIONS` desde cualquier origen. En producción hay que reemplazar el `*` por el dominio real del frontend.
+- **Logging centralizado**: `LoggingFilter` es un `GlobalFilter` que corre antes que los demás (`getOrder() = -1`) y loguea cada request con su status y duración:
+
+  ```text
+  [GATEWAY] --> GET /api/duenios
+  [GATEWAY] <-- GET /api/duenios 200 70ms
+  ```
+
 
 Al registrar un turno, `ms-turno` valida que la mascota y el veterinario existan llamando a `ms-mascota` y `ms-veterinario` con **OpenFeign**. Los clientes usan el nombre con el que cada servicio se registra en Eureka (`@FeignClient(name = "ms-mascota")`), así que no hay IPs ni puertos hardcodeados: Spring Cloud LoadBalancer resuelve el nombre contra Eureka en cada llamada.
 
