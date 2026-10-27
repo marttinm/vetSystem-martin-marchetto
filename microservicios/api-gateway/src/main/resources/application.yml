@@ -1,4 +1,4 @@
-# Puerto, rutas, CORS y Actuator vienen del Config Server (repositorio vetSystem-config)
+# Puerto, rutas, CORS y Actuator vienen del Config Server (config-server/src/main/resources/config)
 spring:
   application:
     name: api-gateway

@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # En produccion reemplazar el "*" por el dominio real del frontend
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: false
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            - id: ms-duenio
+              uri: lb://ms-duenio
+              predicates:
+                - Path=/api/duenios/**
+            - id: ms-mascota
+              uri: lb://ms-mascota
+              predicates:
+                - Path=/api/mascotas/**
+            - id: ms-veterinario
+              uri: lb://ms-veterinario
+              predicates:
+                - Path=/api/veterinarios/**
+            - id: ms-turno
+              uri: lb://ms-turno
+              predicates:
+                - Path=/api/turnos/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      access: unrestricted

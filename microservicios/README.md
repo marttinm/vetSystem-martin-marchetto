@@ -5,7 +5,7 @@ Es un proyecto Maven multi-módulo (`pom.xml` padre con `packaging` `pom`), y ca
 
 | Componente | Puerto | Base de datos | Rol |
 | --- | --- | --- | --- |
-| config-server | 8888 | — | Configuración centralizada, leída del repo [vetSystem-config](https://github.com/marttinm/vetSystem-config) |
+| config-server | 8888 | — | Configuración centralizada de todos los servicios (perfil `native`, archivos en `config-server/src/main/resources/config`) |
 | eureka-server | 8761 | — | Service Discovery: registro y localización de los servicios |
 | api-gateway | 8080 | — | Único punto de entrada: enruta `/api/**` a cada microservicio vía Eureka |
 | ms-duenio | 8081 | duenio_db | CRUD de dueños |
@@ -72,11 +72,13 @@ spring:
     import: "optional:configserver:http://localhost:8888"
 ```
 
-El resto viene del repositorio [vetSystem-config](https://github.com/marttinm/vetSystem-config):
+El resto lo entrega el Config Server, que usa el perfil `native` y lee los archivos de `config-server/src/main/resources/config`. Así toda la configuración vive dentro de este mismo proyecto:
 
 - `application.yml`: configuración compartida (URL de Eureka).
 - `ms-<nombre>.yml`: base de datos, JPA, endpoints de Actuator expuestos (`health`, `info`, `metrics`, `env`, `beans`, `mappings`) y datos de `/actuator/info`.
 - `api-gateway.yml`: puerto, rutas, CORS y endpoints de Actuator del gateway.
+
+Como los archivos se empaquetan dentro del jar del config-server, después de cambiar la configuración hay que recompilarlo y reiniciarlo (`mvn clean package -pl config-server`).
 
 ## API Gateway
 
@@ -113,7 +115,7 @@ POST /api/turnos
 
 - El dominio solo conoce los puertos `MascotaServicePort` y `VeterinarioServicePort`; los adaptadores Feign (`adapter.out.feign`) los implementan y traducen el 404 remoto a `false`.
 - `ms-turno` define sus propias clases reducidas `MascotaResponse` y `VeterinarioResponse`: los microservicios no comparten clases de dominio.
-- Los timeouts (`connect-timeout` 3 s, `read-timeout` 5 s), la compresión y el logging de Feign están en `ms-turno.yml` del repo de configuración.
+- Los timeouts (`connect-timeout` 3 s, `read-timeout` 5 s), la compresión y el logging de Feign están en `config-server/src/main/resources/config/ms-turno.yml`.
 
 | Caso | Respuesta de `POST /api/turnos` |
 | --- | --- |
