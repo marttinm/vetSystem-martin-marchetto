@@ -18,7 +18,11 @@ Los microservicios no comparten base: las relaciones entre contextos se guardan 
 
 ## Cómo levantarlo
 
-Requiere Java 21, Maven y PostgreSQL corriendo en `localhost:5432`.
+Requiere Java 21, Maven, PostgreSQL corriendo en `localhost:5432` y Redis en `localhost:6379` (lo usa el rate limiter del gateway). Redis se puede levantar con Docker:
+
+```bash
+docker run -d --name vetsystem-redis -p 6379:6379 redis:alpine
+```
 
 1. Crear las bases de datos (una sola vez):
 
@@ -123,9 +127,40 @@ POST /api/turnos
 | Mascota y veterinario existen | 201, turno `PENDIENTE` |
 | La mascota no existe | 404 `Mascota no encontrada: <id>` |
 | El veterinario no existe | 404 `Veterinario no encontrado: <id>` |
-| `ms-mascota` o `ms-veterinario` caído | 503 `Servicio remoto no disponible: ...` |
+| `ms-mascota` o `ms-veterinario` caído | 503 `El servicio de mascotas no esta disponible: ...` (ver [Resiliencia](#resiliencia)) |
 
 Para probar el flujo completo, el orden de arranque es: config-server → eureka-server → ms-mascota → ms-veterinario → ms-turno.
+
+## Resiliencia
+
+Con **Resilience4j**, `ms-turno` no se cuelga ni falla en cascada cuando `ms-mascota` o `ms-veterinario` no responden. Los patrones se aplican en los adaptadores de salida (`MascotaFeignAdapter` y `VeterinarioFeignAdapter`), no en los controllers.
+
+- **Retry** (`@Retry`): ante un error reintenta hasta 3 veces en total, con espera progresiva de 1 s y 2 s.
+- **Circuit Breaker** (`@CircuitBreaker`): cuenta los resultados en una ventana de las últimas 10 llamadas. Con al menos 5 llamadas y un 50 % de fallos, el circuito pasa a **OPEN** y deja de llamar al servicio caído durante 10 s. Después pasa a **HALF_OPEN**, deja pasar 3 llamadas de prueba y, si salen bien, vuelve a **CLOSED**.
+- **Fallback**: cuando se agotan los reintentos o el circuito está abierto, el fallback lanza `ServicioNoDisponibleException`, que `GlobalExceptionHandler` responde como **503** con un mensaje que indica qué servicio no está disponible.
+- Un 404 del otro servicio (mascota o veterinario inexistente) no es un fallo: se traduce a `false` y no se reintenta ni cuenta para el circuito.
+
+El Circuit Breaker envuelve al Retry (`circuitBreakerAspectOrder: 1`, `retryAspectOrder: 2`): cada request cuenta como una sola llamada para el circuito, y con el circuito abierto la respuesta es inmediata, sin reintentos. Con el orden por defecto (Retry por fuera), incluso con el circuito abierto cada request esperaba unos 3 s de reintentos.
+
+| Situación | Respuesta de `POST /api/turnos` |
+| --- | --- |
+| Todo funcionando (CLOSED) | 201 |
+| `ms-mascota` caído, circuito todavía CLOSED | 503 después de unos 3 s (3 intentos) |
+| Circuito OPEN | 503 inmediato: `CircuitBreaker 'mascotaService' is OPEN and does not permit further calls` |
+| `ms-mascota` vuelve a estar UP (HALF_OPEN → CLOSED) | 201 |
+
+Monitoreo con Actuator en `ms-turno` (`:8084`):
+
+- `GET /actuator/health`: estado de `mascotaService` y `veterinarioService` (CLOSED, OPEN o HALF_OPEN).
+- `GET /actuator/circuitbreakers`: métricas de cada circuit breaker.
+- `GET /actuator/circuitbreakerevents`: historial de llamadas y transiciones de estado.
+- `GET /actuator/metrics/resilience4j.circuitbreaker.state`: estado actual como métrica.
+
+### Rate Limiter
+
+El gateway limita las requests a `/api/turnos/**` con el filtro `RequestRateLimiter` (algoritmo token bucket guardado en Redis): genera 10 tokens por segundo, acumula hasta 20 para picos y cada request consume 1. Si no quedan tokens responde **429 Too Many Requests** sin llegar a `ms-turno`. Cada respuesta trae los headers `X-RateLimit-Remaining`, `X-RateLimit-Burst-Capacity` y `X-RateLimit-Replenish-Rate`.
+
+El límite es por IP del cliente (`RateLimiterConfig.ipKeyResolver`). Sin ese `KeyResolver` el filtro usa el usuario autenticado como clave y, como todavía no hay autenticación, rechazaría todas las requests con 403.
 
 ## Arquitectura
 

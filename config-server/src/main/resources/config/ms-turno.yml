@@ -25,10 +25,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,env,beans,mappings
+        include: health,info,metrics,env,beans,mappings,circuitbreakers,circuitbreakerevents
   endpoint:
     health:
       show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
   info:
     env:
       enabled: true
@@ -42,3 +45,38 @@ info:
 logging:
   level:
     com.vetSystem.turno.adapter.out.feign: DEBUG
+
+resilience4j:
+  # El Circuit Breaker envuelve al Retry: con el circuito abierto se responde enseguida, sin reintentar
+  circuitbreaker:
+    circuitBreakerAspectOrder: 1
+    instances:
+      mascotaService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowType: COUNT_BASED
+      veterinarioService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowType: COUNT_BASED
+  retry:
+    retryAspectOrder: 2
+    instances:
+      mascotaService:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+      veterinarioService:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2

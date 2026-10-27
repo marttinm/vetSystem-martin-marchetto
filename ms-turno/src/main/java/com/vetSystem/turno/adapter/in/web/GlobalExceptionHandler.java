@@ -1,6 +1,7 @@
 package com.vetSystem.turno.adapter.in.web;
 
 import com.vetSystem.turno.domain.exception.MascotaNotFoundException;
+import com.vetSystem.turno.domain.exception.ServicioNoDisponibleException;
 import com.vetSystem.turno.domain.exception.TurnoNotFoundException;
 import com.vetSystem.turno.domain.exception.TurnoSuperpuestoException;
 import com.vetSystem.turno.domain.exception.VeterinarioNotFoundException;
@@ -35,6 +36,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleVeterinario(VeterinarioNotFoundException ex,
                                                            HttpServletRequest request) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    // Circuito abierto o reintentos agotados al llamar a otro microservicio
+    @ExceptionHandler(ServicioNoDisponibleException.class)
+    public ResponseEntity<ErrorResponse> handleServicioNoDisponible(ServicioNoDisponibleException ex,
+                                                                    HttpServletRequest request) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
     }
 
     // Servicio remoto caido, timeout o error 5xx del otro microservicio
