@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: ms-duenio
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/duenio_db}
+    username: ${DB_USERNAME:magic}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: 8081

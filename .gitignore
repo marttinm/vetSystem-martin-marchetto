@@ -7,6 +7,8 @@
 *.iws
 *.ipr
 out/
+# Los paquetes adapter/out de la arquitectura hexagonal no son salida de IntelliJ
+!**/src/**/out/
 
 # Maven
 target/
