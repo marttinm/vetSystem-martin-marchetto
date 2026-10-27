@@ -74,6 +74,32 @@ El resto viene del repositorio [vetSystem-config](https://github.com/marttinm/ve
 - `application.yml`: configuración compartida (URL de Eureka).
 - `ms-<nombre>.yml`: base de datos, JPA, endpoints de Actuator expuestos (`health`, `info`, `metrics`, `env`, `beans`, `mappings`) y datos de `/actuator/info`.
 
+## Comunicación entre microservicios
+
+Al registrar un turno, `ms-turno` valida que la mascota y el veterinario existan llamando a `ms-mascota` y `ms-veterinario` con **OpenFeign**. Los clientes usan el nombre con el que cada servicio se registra en Eureka (`@FeignClient(name = "ms-mascota")`), así que no hay IPs ni puertos hardcodeados: Spring Cloud LoadBalancer resuelve el nombre contra Eureka en cada llamada.
+
+```text
+POST /api/turnos
+  -> TurnoController
+  -> TurnoServiceImpl
+       |- MascotaServicePort.existsById      -> MascotaFeignAdapter     -> GET ms-mascota/api/mascotas/{id}
+       |- VeterinarioServicePort.existsById  -> VeterinarioFeignAdapter -> GET ms-veterinario/api/veterinarios/{id}
+       '- TurnoRepositoryPort.save           -> turno_db
+```
+
+- El dominio solo conoce los puertos `MascotaServicePort` y `VeterinarioServicePort`; los adaptadores Feign (`adapter.out.feign`) los implementan y traducen el 404 remoto a `false`.
+- `ms-turno` define sus propias clases reducidas `MascotaResponse` y `VeterinarioResponse`: los microservicios no comparten clases de dominio.
+- Los timeouts (`connect-timeout` 3 s, `read-timeout` 5 s), la compresión y el logging de Feign están en `ms-turno.yml` del repo de configuración.
+
+| Caso | Respuesta de `POST /api/turnos` |
+| --- | --- |
+| Mascota y veterinario existen | 201, turno `PENDIENTE` |
+| La mascota no existe | 404 `Mascota no encontrada: <id>` |
+| El veterinario no existe | 404 `Veterinario no encontrado: <id>` |
+| `ms-mascota` o `ms-veterinario` caído | 503 `Servicio remoto no disponible: ...` |
+
+Para probar el flujo completo, el orden de arranque es: config-server → eureka-server → ms-mascota → ms-veterinario → ms-turno.
+
 ## Arquitectura
 
 Cada microservicio sigue la arquitectura hexagonal (Ports & Adapters), organizada en tres zonas:
