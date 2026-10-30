@@ -7,6 +7,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -69,6 +70,13 @@ public class GlobalExceptionHandler {
                                                             HttpServletRequest request) {
         return construir(HttpStatus.BAD_REQUEST,
                 "El valor '" + ex.getValue() + "' no es valido para el parametro " + ex.getName(), request);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleParametroFaltante(MissingServletRequestParameterException ex,
+                                                                 HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST,
+                "Falta el parametro obligatorio " + ex.getParameterName(), request);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
