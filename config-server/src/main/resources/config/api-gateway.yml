@@ -24,6 +24,11 @@ spring:
               enabled: true
               lower-case-service-id: true
           routes:
+            # Ruta publica: el AuthenticationFilter deja pasar /auth/** sin token
+            - id: ms-auth
+              uri: lb://ms-auth
+              predicates:
+                - Path=/auth/**
             - id: ms-duenio
               uri: lb://ms-duenio
               predicates:
@@ -46,6 +51,10 @@ spring:
                     redis-rate-limiter.replenishRate: 10
                     redis-rate-limiter.burstCapacity: 20
                     redis-rate-limiter.requestedTokens: 1
+
+# Tiene que ser IDENTICA a la de ms-auth (ms-auth.yml): ms-auth firma con ella y el gateway verifica
+jwt:
+  secret: ${JWT_SECRET:patitas-felices-secret-key-2026-muy-larga-para-ser-segura}
 
 management:
   endpoints:
