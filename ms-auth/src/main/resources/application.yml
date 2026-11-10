@@ -1,0 +1,9 @@
+# La base de datos, JPA, Eureka y la clave JWT vienen del Config Server (config-server/src/main/resources/config)
+spring:
+  application:
+    name: ms-auth
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+server:
+  port: 8085
