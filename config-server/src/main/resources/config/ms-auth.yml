@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${DB_USERNAME:magic}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# Clave para firmar los tokens. Minimo 32 caracteres (256 bits) para HS256 y
+# tiene que ser IDENTICA a la del api-gateway (api-gateway.yml)
+jwt:
+  secret: ${JWT_SECRET:patitas-felices-secret-key-2026-muy-larga-para-ser-segura}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,mappings
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ms-auth
+    description: Microservicio de autenticacion con JWT - Patitas Felices
+    version: 1.0.0
