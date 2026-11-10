@@ -8,7 +8,8 @@ Es un proyecto Maven multi-módulo (`pom.xml` padre con `packaging` `pom`), y ca
 | --- | --- | --- | --- |
 | config-server | 8888 | — | Configuración centralizada de todos los servicios (perfil `native`, archivos en `config-server/src/main/resources/config`) |
 | eureka-server | 8761 | — | Service Discovery: registro y localización de los servicios |
-| api-gateway | 8080 | — | Único punto de entrada: enruta `/api/**` a cada microservicio vía Eureka |
+| api-gateway | 8080 | — | Único punto de entrada: valida el JWT y enruta cada request al microservicio vía Eureka |
+| ms-auth | 8085 | auth_db | Registro y login de usuarios, emite los tokens JWT |
 | ms-duenio | 8081 | duenio_db | CRUD de dueños |
 | ms-mascota | 8082 | mascota_db | CRUD de mascotas (referencia al dueño por `duenioId`) |
 | ms-veterinario | 8083 | veterinario_db | CRUD de veterinarios |
@@ -31,6 +32,7 @@ docker run -d --name vetsystem-redis -p 6379:6379 redis:alpine
    createdb mascota_db
    createdb veterinario_db
    createdb turno_db
+   createdb auth_db
    ```
 
 2. Compilar todos los módulos desde la raíz del repo:
@@ -44,11 +46,12 @@ docker run -d --name vetsystem-redis -p 6379:6379 redis:alpine
    ```bash
    mvn spring-boot:run -pl config-server    # 1. tiene que estar UP antes que todos
    mvn spring-boot:run -pl eureka-server    # 2. tiene que estar UP antes que los microservicios
-   mvn spring-boot:run -pl ms-duenio        # 3. los microservicios, en cualquier orden
+   mvn spring-boot:run -pl ms-auth          # 3. el servicio de autenticacion
+   mvn spring-boot:run -pl ms-duenio        # 4. los microservicios, en cualquier orden
    mvn spring-boot:run -pl ms-mascota
    mvn spring-boot:run -pl ms-veterinario
    mvn spring-boot:run -pl ms-turno
-   mvn spring-boot:run -pl api-gateway      # 4. el gateway, al final
+   mvn spring-boot:run -pl api-gateway      # 5. el gateway, al final
    ```
 
    Si un microservicio arranca antes que el Config Server no obtiene su configuración (base de datos, JPA, Eureka, Actuator). Si arranca antes que Eureka no se puede registrar, pero reintenta solo.
@@ -57,7 +60,7 @@ docker run -d --name vetsystem-redis -p 6379:6379 redis:alpine
 
 4. Verificar:
 
-   - Dashboard de Eureka: http://localhost:8761 (tienen que aparecer los cuatro microservicios y el API-GATEWAY en UP)
+   - Dashboard de Eureka: http://localhost:8761 (tienen que aparecer MS-AUTH, los cuatro microservicios y el API-GATEWAY en UP)
    - Rutas del gateway: http://localhost:8080/actuator/gateway/routes
    - Configuración que entrega el Config Server: http://localhost:8888/ms-duenio/default
    - Swagger de cada microservicio: `http://localhost:<puerto>/swagger-ui/index.html`
@@ -81,7 +84,7 @@ El resto lo entrega el Config Server, que usa el perfil `native` y lee los archi
 
 - `application.yml`: configuración compartida (URL de Eureka).
 - `ms-<nombre>.yml`: base de datos, JPA, endpoints de Actuator expuestos (`health`, `info`, `metrics`, `env`, `beans`, `mappings`) y datos de `/actuator/info`.
-- `api-gateway.yml`: puerto, rutas, CORS y endpoints de Actuator del gateway.
+- `api-gateway.yml`: puerto, rutas, CORS, clave JWT y endpoints de Actuator del gateway.
 
 Como los archivos se empaquetan dentro del jar del config-server, después de cambiar la configuración hay que recompilarlo y reiniciarlo (`mvn clean package -pl config-server`).
 
@@ -91,6 +94,7 @@ Los clientes (Postman, un frontend) solo hablan con el gateway en el puerto **80
 
 | Path externo (:8080) | Microservicio destino | Puerto interno |
 | --- | --- | --- |
+| `/auth/**` | ms-auth (pública, sin token) | 8085 |
 | `/api/duenios/**` | ms-duenio | 8081 |
 | `/api/mascotas/**` | ms-mascota | 8082 |
 | `/api/veterinarios/**` | ms-veterinario | 8083 |
@@ -160,7 +164,33 @@ Monitoreo con Actuator en `ms-turno` (`:8084`):
 
 El gateway limita las requests a `/api/turnos/**` con el filtro `RequestRateLimiter` (algoritmo token bucket guardado en Redis): genera 10 tokens por segundo, acumula hasta 20 para picos y cada request consume 1. Si no quedan tokens responde **429 Too Many Requests** sin llegar a `ms-turno`. Cada respuesta trae los headers `X-RateLimit-Remaining`, `X-RateLimit-Burst-Capacity` y `X-RateLimit-Replenish-Rate`.
 
-El límite es por IP del cliente (`RateLimiterConfig.ipKeyResolver`). Sin ese `KeyResolver` el filtro usa el usuario autenticado como clave y, como todavía no hay autenticación, rechazaría todas las requests con 403.
+El límite es por IP del cliente (`RateLimiterConfig.ipKeyResolver`). Sin ese `KeyResolver` el filtro usa el usuario autenticado de Spring Security como clave y, como el gateway valida el JWT con su propio filtro y no con Spring Security, rechazaría todas las requests con 403.
+
+## Seguridad (JWT)
+
+Cualquier request a `/api/**` necesita un token JWT. La seguridad está repartida en tres partes:
+
+- **ms-auth** registra usuarios (contraseña encriptada con BCrypt en `auth_db`) y emite los tokens. Es el único que firma tokens.
+- **api-gateway**: `AuthenticationFilter` es un `GlobalFilter` que corre después del `LoggingFilter` (`getOrder() = 0`). Deja pasar `/auth/**` sin token y en el resto exige el header `Authorization: Bearer <token>`; si falta o el token no es válido responde **401** sin llegar al microservicio. Si es válido agrega el header `X-Auth-User` con el username.
+- **Microservicios de negocio**: no cambian. No validan tokens, confían en que el gateway ya filtró.
+
+```text
+POST /auth/register  -> ms-auth crea el usuario y devuelve {"token": "..."}
+POST /auth/login     -> ms-auth valida la contraseña y devuelve {"token": "..."}
+GET  /api/mascotas   -> el gateway valida el token -> válido: ms-mascota | ausente o inválido: 401
+```
+
+El token lleva el username (`sub`), el `rol` y vence a las 24 horas (`exp`). `ms-auth` lo firma y el gateway lo verifica con la misma clave (`jwt.secret`, mínimo 32 caracteres), que está en `ms-auth.yml` y en `api-gateway.yml` y se puede reemplazar con la variable `JWT_SECRET`. Si las claves no coinciden, todas las requests dan 401. JJWT elige el algoritmo según el largo de la clave: con la clave de 57 caracteres firma con HS384 en vez de HS256.
+
+| Caso | Respuesta |
+| --- | --- |
+| `POST /auth/register` con `{"username": "jorge", "password": "1234", "rol": "ADMIN"}` | 200 + token |
+| `POST /auth/login` con `{"username": "jorge", "password": "1234"}` | 200 + token |
+| `GET /api/mascotas` con `Authorization: Bearer <token>` | 200 + lista de mascotas |
+| `GET /api/mascotas` sin header `Authorization` | 401 |
+| `GET /api/mascotas` con `Authorization: Bearer eyJhbGcTokenFalso` | 401 |
+| `POST /auth/login` con contraseña incorrecta | 401 `Usuario o contrasenia incorrectos` |
+| `POST /auth/register` con un username que ya existe | 409 |
 
 ## Arquitectura
 
